@@ -335,7 +335,7 @@ async def showEventInfo(message : Message,state : FSMContext):
 @admin.message(AdminProtect(),F.text == "👥Записавшиеся")
 async def showSignUpUsers(message : Message,state : FSMContext):
     data = await state.get_data()
-    event = data.get("event") # если никто не записался то так и выводим # в запросах,если количество идущих равно 0 то список не нужен
+    event = data.get("event") 
     if list(await getCountOfSignUp(event))[0] == 0:
         await message.answer("На мероприятие никто не записался!")
     else:
