@@ -138,7 +138,7 @@ async def showAllEvents(message : Message, state:FSMContext):
 # Обработаем кнопку записаться
 @user.message(F.text == "📝Записаться",EventSign.event)
 async def getUserData(message : Message,state : FSMContext):
-    # Провервыч на записался ли уже
+    # Проверка записался-ли уже пользователь
     data = await state.get_data()
     event = data.get("event")
     if await checkSignUp(event,message.from_user.id) is None:
