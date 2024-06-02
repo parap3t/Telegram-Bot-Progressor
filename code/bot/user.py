@@ -86,7 +86,7 @@ async def showUserMenu(message : Message,state : FSMContext):
 # Обрабокта кнопок с мероприятиями
 @user.message(EventCheck())
 async def showEventInfo(message : Message, state: FSMContext):
-    # проверка записался-ли уже пользователь на мероприятие CheckSignUp если тру,то проверяем диднт кам
+    # проверка записался-ли уже пользователь на мероприятие
     await state.set_state(EventSign.event)
     await state.update_data(event = message.text)
     if await checkSignUp(message.text,message.from_user.id) is None:
@@ -147,7 +147,7 @@ async def getUserData(message : Message,state : FSMContext):
     else:
         await message.answer("Вы уже записались на это мерпориятие!")
 
-# Ожиаем ввод ф.и от пользователя
+# Ожидаем ввод ф.и от пользователя
 @user.message(EventSign.firstLastNames)
 async def waitFirstLastNames(message: Message,state:FSMContext):   
     if message.text != None and search(compile("^[а-яёА-ЯЁ]{3,25} [а-яёА-ЯЁ]{3,25}$"),message.text):
@@ -158,7 +158,7 @@ async def waitFirstLastNames(message: Message,state:FSMContext):
     else:
         await message.answer("Некорректные ф.и!\nПопробуйте ещё раз!")
 
-# Ожиаем ввод телефона от пользователя
+# Ожидаем ввод телефона от пользователя
 @user.message(EventSign.phone)
 async def waitPhone(message : Message,state : FSMContext):
     if message.text != None and search(compile("^[+]7[0-9]{10}?$"),message.text):
@@ -168,7 +168,7 @@ async def waitPhone(message : Message,state : FSMContext):
     else:
         await message.answer("Некорректный номер телефона!\nПопробуйте ещё раз!",reply_markup=kb.userCancelMarkup)
 
-# Ожиаем ввод почты от пользователя
+# Ожидаем ввод почты от пользователя
 @user.message(EventSign.email)
 async def waiiEmail(message : Message,state : FSMContext):
     if message.text != None and search(compile("^[a-zA-Z0-9.]{1,60}@[a-zA-Z]{1,10}.[a-zA-Z]{2,3}$"),message.text):
