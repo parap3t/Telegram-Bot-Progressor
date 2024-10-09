@@ -124,11 +124,14 @@ async def get_event_info_by_name(*, event_name: str):
         return await session.scalar(select(Event).where(Event.name == event_name))
 
 
-async def add_signup_user(*, event_name: str, full_name: str, phone: str, chat_id: int):
+async def add_signup_user(*, event_name: str, full_name: str, phone: str, chat_id: int, level: str, username: str):
     async with async_session() as session:
         id_of_event = (await session.scalar(select(Event).where(Event.name == event_name))).id
         session.add(EventSingUp(chat_id=chat_id, full_name=full_name,
-                                phone=phone, event_id=id_of_event, event_status=1))
+                                phone=phone, event_id=id_of_event,
+                                level=level,
+                                username=username,
+                                event_status=1))
         await session.commit()
 
 
@@ -181,7 +184,9 @@ async def get_signup_people(*, event_name: str):
         people: dict = {
             "Полное имя": [],
             "Телефон": [],
-            "Айди чата": []
+            "Айди чата": [],
+            "Уровень": [],
+            "Никнейм": [],
         }
         signup_people = await session.scalars(select(EventSingUp).where((EventSingUp.event_status == 1) &
                                                                         (EventSingUp.event_id == id_of_event)))
@@ -189,4 +194,9 @@ async def get_signup_people(*, event_name: str):
             people["Полное имя"] += [user.full_name]
             people["Телефон"] += [user.phone]
             people["Айди чата"] += [user.chat_id]
+            people["Уровень"] += [user.level]
+            people["Никнейм"] += [user.username]
+            # Добавляем уровень
+            # telegram_user = await bot.get_chat(user.chat_id)
+            # people["Никнейм"].append(telegram_user.username)
         return people

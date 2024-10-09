@@ -63,7 +63,9 @@ class EventSingUp(Base):
     phone: Mapped[int] = mapped_column(Integer)
     chat_id: Mapped[int] = mapped_column(Integer)
     event_status: Mapped[int] = mapped_column(Integer)
+    level: Mapped[int] = mapped_column(Integer)
     event_id: Mapped[int] = mapped_column(ForeignKey(Event.id))
+    username: Mapped[str] = mapped_column(String(100), nullable=True)
 
 # При запуске главного файла создаём таблицы
 

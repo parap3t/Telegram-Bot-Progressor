@@ -34,7 +34,9 @@ class EventSignUp(StatesGroup):
     event_name = State()
     full_name = State()
     id = State()
+    level = State()
     phone = State()
+    username = State()
     confirm = State()
 
 # Обработаем команду айди
@@ -140,8 +142,19 @@ async def btn_event_name_click(message: Message, state: FSMContext, event_name: 
 
     # Create a string with the list of registered users
     registered_users_list = ""
-    for i, (name, phone, _) in enumerate(zip(registered_users["Полное имя"], registered_users["Телефон"], registered_users["Айди чата"]), 1):
-        registered_users_list += f"{i}. {name} - {phone}\n"
+    print(registered_users)
+    nicks = registered_users['Полное имя']
+    tgs = registered_users['Никнейм']
+    levels = registered_users['Уровень']
+
+    for i, (nick, level_id, username) in enumerate(zip(nicks, levels, tgs), start=1):
+        print(user)
+
+        level_symbol = next(
+            (level['level_symbol'] for level in kb.LEVEL_DESCR if level['level_id'] == level_id), '')
+
+        registered_users_list += f"{i}. {nick} {level_symbol} - @{username}\n"
+
     registered_users_str = registered_users_str.format(
         registered_users_list=registered_users_list)
 
@@ -205,6 +218,7 @@ async def confirm_signup_callback(callback: CallbackQuery, state: FSMContext):
         await change_signup_status(event_name=event_name, chat_id=chat_id)
         await callback.message.answer("Вы успешно отменили запись!", reply_markup=await kb.get_events_names_buttons())
         await state.clear()
+
     else:
         await callback.message.answer("Отменяю действие!",
                                       reply_markup=await kb.get_event_menu(rights="user", event_status="signed"))
@@ -226,11 +240,11 @@ async def btn_signup_click(message: Message, state: FSMContext):
     if await check_is_signup_open(event_name=event_name) is not None:
         # Проверка записи на мерпориятие
         if await check_signup(event_name=event_name, chat_id=message.from_user.id) is None:
-            # Check if the event has reached its limit
-            current_signups = len(await get_signup_people(event_name=event_name))
+            signuped_users = await get_signup_people(event_name=event_name)
+            current_signups = len(signuped_users["Полное имя"])
             event_info = await get_event_info_by_name(event_name=event_name)
             if current_signups < event_info.limit:
-                await message.answer("Введите фамилию и имя!\nПример : Иванов Иван",
+                await message.answer("Введите свой игровой ник\nПример : Фиалка",
                                      reply_markup=await kb.get_user_cancel_button())
                 await state.set_state(EventSignUp.full_name)
             else:
@@ -243,13 +257,34 @@ async def btn_signup_click(message: Message, state: FSMContext):
 
 @user.message(EventSignUp.full_name)
 async def wait_full_name(message: Message, state: FSMContext):
-    if message.text is not None and search(compile("^[а-яёА-ЯЁ]{3,25}? [а-яёА-ЯЁ]{3,25}?$"), message.text):
+    if message.text is not None:
         await state.update_data(full_name=message.text)
-        await message.answer("Поделитесь своим номером телефона, нажав на кнопку '📞Отправить' ",
-                             reply_markup=await kb.get_user_cancel_button(addition="phone"))
+        await message.answer(
+            'Выберите свой уровень. Описание уровней есть в <a href="https://t.me/mafia_itmo/64">посте</a>',
+            reply_markup=await kb.get_level_keyboard(),
+            parse_mode="HTML"
+        )
+        await state.set_state(EventSignUp.level)
+    else:
+        await message.answer("Некорректный ник! Попробуйте ещё раз!")
+
+
+@user.callback_query(EventSignUp.level)
+async def level_selection_callback(callback: CallbackQuery, state: FSMContext):
+    # Получаем выбранный уровень
+    level_id = int(callback.data.split("_")[1])
+    selected_level = next(
+        (lvl for lvl in kb.LEVEL_DESCR if lvl["level_id"] == level_id), None)
+
+    if selected_level:
+        await state.update_data(level=selected_level)
+        await callback.message.answer(
+            "Поделитесь своим номером телефона, нажав на кнопку '📞Отправить'",
+            reply_markup=await kb.get_user_cancel_button(addition="phone")
+        )
         await state.set_state(EventSignUp.phone)
     else:
-        await message.answer("Некорректные ф.и!\nПопробуйте ещё раз!")
+        await callback.message.answer("Ошибка выбора уровня. Попробуйте снова.")
 
 
 @user.message(EventSignUp.phone)
@@ -259,12 +294,17 @@ async def wait_phone(message: Message, state: FSMContext):
         await state.update_data(id=message.from_user.id)
         data_from_state: dict = await state.get_data()
         event_name: str = data_from_state.get("event_name")
+        username = message.from_user.username if message.from_user.username else "No username"
+        await state.update_data(username=username)
         full_name: str = data_from_state.get("full_name")
+        user_level_dict: dict = data_from_state.get("level")
         await message.answer(f"Подтвердите запись на мероприятие!"
                              f"\n🎉Название мероприятия : {event_name}"
                              f"\n📒Ваши данные : "
-                             f"\n👤Ф.И : {full_name}"
-                             f"\n📞Номер телефона : {message.contact.phone_number}",
+                             f"\n👤Игровой ник : {full_name}"
+                             f"\n👤Уровень : {user_level_dict['level_symbol']}"
+                             f"\n📞Номер телефона : {message.contact.phone_number}"
+                             f"\n👤Ваш Telegram ник : @{username}",
                              reply_markup=await kb.get_confirm_menu("confirm_signup"))
         await state.set_state(EventSignUp.confirm)
     else:
@@ -282,11 +322,22 @@ async def confirm_signup_callback(callback: CallbackQuery, state: FSMContext):
         event_name: str = data_from_state.get("event_name")
         user_full_name: str = data_from_state.get("full_name")
         user_phone: str = data_from_state.get("phone")
+        username: str = data_from_state.get("username")
+
         user_chat_id: str = data_from_state.get("id")
-        await add_signup_user(event_name=event_name, full_name=user_full_name, phone=user_phone, chat_id=user_chat_id)
+        user_level: dict = data_from_state.get("level")  # Уровень
+
+        # Сохраняем запись вместе с уровнем
+        await add_signup_user(
+            event_name=event_name,
+            full_name=user_full_name,
+            phone=user_phone,
+            chat_id=user_chat_id,
+            username=username,
+            level=user_level['level_id']  # Передаем уровень
+        )
         await callback.message.answer("Вы успешно записались!", reply_markup=await kb.get_events_names_buttons())
         await state.clear()
     else:
-        await callback.message.answer("Отменяю запись!\nВведите фамилию и имя!",
-                                      reply_markup=await kb.get_user_cancel_button())
+        await callback.message.answer("Отменяю запись!\nВведите ник снова.", reply_markup=await kb.get_user_cancel_button())
         await state.set_state(EventSignUp.full_name)

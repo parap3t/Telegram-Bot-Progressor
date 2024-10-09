@@ -2,6 +2,32 @@ from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, InlineKeyboardMar
 from aiogram.utils.keyboard import ReplyKeyboardBuilder
 from database.requests import get_events
 
+LEVEL_DESCR = [
+    {
+        "level_id": 1,
+        "level_symbol": "🟢",
+        "level_name": "Новичок"
+    },
+    {
+        "level_id": 2,
+        "level_symbol": "🟡",
+        "level_name": "Средний"
+    },
+    {
+        "level_id": 3,
+        "level_symbol": "🔴",
+        "level_name": "Продвинутый"
+    }
+]
+
+
+async def get_level_keyboard():
+    return InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(
+            text=f"{level['level_symbol']} {level['level_name']}", callback_data=f"level_{level['level_id']}")]
+        for level in LEVEL_DESCR
+    ])
+
 
 # Кнопки со ссылками на контакты
 our_contacts = InlineKeyboardMarkup(inline_keyboard=[
