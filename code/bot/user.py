@@ -112,7 +112,7 @@ async def btn_event_name_click(message: Message, state: FSMContext, event_name: 
 📆Дата и время проведения: <b>{event_date}</b>
 🎊Описание: {event_desc}
 👤Ограничение: <b>{event_limit} игроков</b>
-✏️Запись: {is_signup_open_str}\n'''
+✏️Запись: <b>{is_signup_open_str}</b>\n'''
 
     user_data_str = '''           
 📁Ваши данные :
@@ -146,6 +146,7 @@ async def btn_event_name_click(message: Message, state: FSMContext, event_name: 
     nicks = registered_users['Полное имя']
     tgs = registered_users['Никнейм']
     levels = registered_users['Уровень']
+    is_signup_open_str = "открыта" if len(nicks) < event_limit else "закрыта"
 
     for i, (nick, level_id, username) in enumerate(zip(nicks, levels, tgs), start=1):
         print(user)
