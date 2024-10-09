@@ -14,16 +14,22 @@ from re import compile, search
 user = Router()
 
 # Создаём класс (фильтр) для того, чтобы проверить забанен-ли пользователь
+
+
 class BannedProtect(Filter):
     async def __call__(self, message: Message):
         return await check_ban(chat_id=message.from_user.id)
 
 # Создаём класс (фильтр) для проверки является-ли сообщение названием мероприятия
+
+
 class EventCheck(Filter):
     async def __call__(self, message: Message):
         return await check_event_by_name(event_name=message.text)
 
 # Создаём класс (состояние) для записи на мероприятие
+
+
 class EventSignUp(StatesGroup):
     event_name = State()
     full_name = State()
@@ -32,33 +38,43 @@ class EventSignUp(StatesGroup):
     confirm = State()
 
 # Обработаем команду айди
+
+
 @user.message(Command("id"))
 async def id_command(message: Message):
     await message.answer(f"Ваш айди: {message.from_user.id}")
 
 # Обработка сообщений от забаненного пользователя
+
+
 @user.message(BannedProtect())
 async def show_message_to_ban_user(message: Message):
     await message.answer("Вы забанены за плохое поведение!")
 
+
 @user.message(CommandStart())
 async def start_command(message: Message):
     await add_in_mailing(chat_id=message.from_user.id)
-    await message.answer_sticker("CAACAgIAAxkBAAEDJLZlt3nrHgcV-CbOkU3EuAhDVSg4GQACkQ8AAo7aAAFIhPeRyUFm2n40BA")
+    sticker_id = "CAACAgIAAxkBAAEuSs5nBl1rNuFirPiPXjRVrUDOwTuMBgAClCEAApog6Ep3hdlbdFG1aTYE"
+    await message.answer_sticker(sticker_id)
     await message.answer(f"Добро пожаловать, {message.from_user.first_name}!", reply_markup=await kb.get_start_menu(rights="user"))
-    
+
+
 @user.message(F.text == "🚫Отмена")
 async def btn_cancel_click(message: Message, state: FSMContext):
     await state.set_state(EventSignUp.event_name)
     await message.answer("Отменяю действие", reply_markup=await kb.get_event_menu(rights="user", event_status="unsigned"))
 
+
 @user.message(F.text == "👤Наши контакты")
 async def btn_contacts_click(message: Message):
     await message.answer("Наши контакты:", reply_markup=kb.our_contacts)
 
+
 @user.message(F.text == "💻Тех поддержка")
 async def btn_support_click(message: Message):
     await message.answer("Техническая поддержка:", reply_markup=kb.tech_support)
+
 
 @user.message(F.text == "🎉Мероприятия")
 async def btn_events_click(message: Message):
@@ -69,12 +85,15 @@ async def btn_events_click(message: Message):
         await message.answer("Выберите интересующее вас мероприятие!",
                              reply_markup=await kb.get_events_names_buttons())
 
+
 @user.message(F.text == "👈Назад")
 async def btn_back_click(message: Message, state: FSMContext):
     await state.clear()
     await message.answer("Открываю меню", reply_markup=await kb.get_start_menu(rights="user"))
 
 # Обработка нажатий кнопок с названием мероприятий
+
+
 @user.message(EventCheck())
 async def btn_event_name_click(message: Message, state: FSMContext):
     await state.set_state(EventSignUp.event_name)
@@ -86,19 +105,22 @@ async def btn_event_name_click(message: Message, state: FSMContext):
     event_date = event_info.date
     event_desc = event_info.description
     is_signup_open = await check_is_signup_open(event_name=event_name)
+    is_signup_open_str = "открыта" if is_signup_open is not None else "закрыта"
+    event_status = 'unsigned' if is_signup_open is not None else ''
     if await check_signup(event_name=event_name, chat_id=chat_id) is None:
         await message.answer(f"🎉Название мероприятия: {event_name}"
                              f"\n📆Дата и время проведения: {event_date}"
                              f"\n🎊Описание: {event_desc}"
-                             f"\n✏️Запись: {"открыта" if is_signup_open is not None else "закрыта"}",
-                             reply_markup=await kb.get_event_menu(rights="user", 
-                                                                  event_status=f"{"unsigned" if is_signup_open is not None else ""}"))
+                             f"\n✏️Запись: {is_signup_open_str}",
+                             reply_markup=await kb.get_event_menu(rights="user",
+                                                                  event_status=event_status))
     else:
-        full_info_about_signup_user = await get_full_info_about_singup_user(event_name=event_name, 
-                                                                                chat_id=chat_id)
+        full_info_about_signup_user = await get_full_info_about_singup_user(event_name=event_name,
+                                                                            chat_id=chat_id)
         signup_user_full_name = full_info_about_signup_user.full_name
         signup_user_phone = full_info_about_signup_user.phone
-        
+        is_signup_open_str = "открыта" if is_signup_open is not None else "закрыта"
+
         if await check_go_to_event(event_name=event_name, chat_id=chat_id) is not None:
             await message.answer(f"🎉Название мероприятия: {event_name}"
                                  f"\n📆Дата и время проведения: {event_date}"
@@ -106,7 +128,7 @@ async def btn_event_name_click(message: Message, state: FSMContext):
                                  f"\n📁Ваши данные :\n👤Ф.И: {signup_user_full_name}"
                                  f"\n📞Телефон: {signup_user_phone}"
                                  f" \n🛎Статус : пойду"
-                                 f"\n✏️Запись: {"открыта" if is_signup_open is not None else "закрыта"}",
+                                 f"\n✏️Запись: {is_signup_open_str}",
                                  reply_markup=await kb.get_event_menu(rights="user", event_status="signed"))
         else:
             await message.answer(f"🎉Название мероприятия: {event_name}\n🎊Описание: {event_desc}"
@@ -114,6 +136,7 @@ async def btn_event_name_click(message: Message, state: FSMContext):
                                  f"\n👤Ф.И: {signup_user_full_name}"
                                  f"\n📞Телефон: {signup_user_phone}"
                                  f"\n🛎Статус : не пойду", reply_markup=await kb.get_event_menu(rights="user"))
+
 
 @user.message(F.text == "❌Я не приду", EventSignUp.event_name)
 async def btn_dont_go_to_the_event_click(message: Message, state: FSMContext):
@@ -132,10 +155,12 @@ async def btn_dont_go_to_the_event_click(message: Message, state: FSMContext):
             await message.answer("Вы уже отменили запись!")
 
 # Обработаем нажатие кнопок для отмены записи на мероприятие
+
+
 @user.callback_query(EventSignUp.event_name)
 async def confirm_signup_callback(callback: CallbackQuery, state: FSMContext):
-    await callback.message.delete() 
-    if callback.data == "cofirm_dont_go_to_event": 
+    await callback.message.delete()
+    if callback.data == "cofirm_dont_go_to_event":
         data_from_state: dict = await state.get_data()
         event_name: str = data_from_state.get("event_name")
         chat_id: str = data_from_state.get("id")
@@ -143,14 +168,17 @@ async def confirm_signup_callback(callback: CallbackQuery, state: FSMContext):
         await callback.message.answer("Вы успешно отменили запись!", reply_markup=await kb.get_events_names_buttons())
         await state.clear()
     else:
-        await callback.message.answer("Отменяю действие!", 
+        await callback.message.answer("Отменяю действие!",
                                       reply_markup=await kb.get_event_menu(rights="user", event_status="signed"))
 
 # Обработаем кнопку выхода из мероприятия
+
+
 @user.message(F.text == "🔙Назад")
 async def btn_exit_from_events_click(message: Message, state: FSMContext):
     await state.clear()
     await message.answer("Перехожу назад", reply_markup=await kb.get_events_names_buttons())
+
 
 @user.message(F.text == "📝Записаться", EventSignUp.event_name)
 async def btn_signup_click(message: Message, state: FSMContext):
@@ -159,14 +187,15 @@ async def btn_signup_click(message: Message, state: FSMContext):
     # Проверка открыта-ли запись
     if await check_is_signup_open(event_name=event_name) is not None:
         # Проверка записи на мерпориятие
-        if await check_signup(event_name=event_name,chat_id=message.from_user.id) is None:
-            await message.answer("Введите фамилию и имя!\nПример : Иванов Иван", 
+        if await check_signup(event_name=event_name, chat_id=message.from_user.id) is None:
+            await message.answer("Введите фамилию и имя!\nПример : Иванов Иван",
                                  reply_markup=await kb.get_user_cancel_button())
             await state.set_state(EventSignUp.full_name)
         else:
             await message.answer("Вы уже записались на это мерпориятие!")
     else:
         await message.answer("Запись на мероприятие уже закрыта!")
+
 
 @user.message(EventSignUp.full_name)
 async def wait_full_name(message: Message, state: FSMContext):
@@ -177,6 +206,7 @@ async def wait_full_name(message: Message, state: FSMContext):
         await state.set_state(EventSignUp.phone)
     else:
         await message.answer("Некорректные ф.и!\nПопробуйте ещё раз!")
+
 
 @user.message(EventSignUp.phone)
 async def wait_phone(message: Message, state: FSMContext):
@@ -195,9 +225,11 @@ async def wait_phone(message: Message, state: FSMContext):
         await state.set_state(EventSignUp.confirm)
     else:
         await message.answer("Некорректный номер телефона!\nПопробуйте ещё раз!",
-                         reply_markup=await kb.get_user_cancel_button(addition="phone"))
+                             reply_markup=await kb.get_user_cancel_button(addition="phone"))
 
 # Обработаем кнопку для подтверждения/отмены удаления мероприятия
+
+
 @user.callback_query(EventSignUp.confirm)
 async def confirm_signup_callback(callback: CallbackQuery, state: FSMContext):
     await callback.message.delete()
