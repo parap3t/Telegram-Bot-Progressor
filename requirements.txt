@@ -10,7 +10,7 @@ certifi==2024.6.2
 et-xmlfile==1.1
 frozenlist==1.4.1
 greenlet==3.0.3
-idna==3.7 ; python_versi
+idna==3.7
 magic-filter==1.0.
 multidict==6.0.5
 numpy==2.0.1
@@ -25,6 +25,6 @@ setuptools==72.1.0
 six==1.16.0
 sqlalchemy==2.0.31
 typing-extensions==4.12
-tzdata==2024.1 ; python_versi
+tzdata==2024.1
 xlsxwriter==3.2.0
 yarl==1.9.4
