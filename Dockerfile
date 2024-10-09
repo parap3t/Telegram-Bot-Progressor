@@ -14,7 +14,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY ./code /app
 
 # Копируем .env файл
-COPY .env /app/.env
+COPY .env /.env
 
 # Команда для запуска приложения
 CMD ["python", "run.py"]
