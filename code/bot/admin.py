@@ -25,6 +25,7 @@ BOT = Bot(token=BOT_API)
 
 # Создаём класс (фильтр) для проверки админа
 
+
 class AdminProtect(Filter):
     async def __call__(self, message: Message):
         return await check_admin(chat_id=message.from_user.id)
@@ -64,6 +65,7 @@ class DelAdmin(StatesGroup):
 class AddEvent(StatesGroup):
     name = State()
     date = State()
+    limit = State()
     description = State()
     confirm = State()
 
@@ -299,21 +301,38 @@ async def waiting_date_of_event(message: Message, state: FSMContext):
 
 
 @admin.message(AddEvent.description)
-async def waiting_event_disc(message: Message, state: FSMContext):
+async def waiting_event_desc(message: Message, state: FSMContext):
     description = message.text
     if description is not None:
-        data_from_state: dict = await state.get_data()
-        event_name: str = data_from_state.get("name")
-        event_date: str = data_from_state.get("date")
         await state.update_data(description=description)
-        await message.answer(f"Подтвердите создание мероприятия!"
-                             f"\nНазвание : {event_name}"
-                             f"\nДата и время: {event_date}"
-                             f"\nОписание : {description}",
-                             reply_markup=await kb.get_confirm_menu(callback="confirm_add_event"))
-        await state.set_state(AddEvent.confirm)
+        await message.answer("Введите лимит участников для мероприятия (целое число):", reply_markup=kb.admin_cancel_markup)
+        await state.set_state(AddEvent.limit)
     else:
         await message.answer("Некорректное описание!\nПопробуйте ещё раз!", reply_markup=kb.admin_cancel_markup)
+
+
+@admin.message(AddEvent.limit)
+async def waiting_event_limit(message: Message, state: FSMContext):
+    try:
+        limit = int(message.text)
+        if limit > 0:
+            await state.update_data(limit=limit)
+            data_from_state: dict = await state.get_data()
+            event_name: str = data_from_state.get("name")
+            event_date: str = data_from_state.get("date")
+            event_description: str = data_from_state.get("description")
+            await message.answer(f"Подтвердите создание мероприятия!"
+                                 f"\nНазвание: {event_name}"
+                                 f"\nДата и время: {event_date}"
+                                 f"\nОписание: {event_description}"
+                                 f"\nЛимит участников: {limit}",
+                                 reply_markup=await kb.get_confirm_menu(callback="confirm_add_event"))
+            await state.set_state(AddEvent.confirm)
+        else:
+            await message.answer("Лимит должен быть положительным числом!\nПопробуйте ещё раз!", reply_markup=kb.admin_cancel_markup)
+    except ValueError:
+        await message.answer("Некорректный лимит!\nВведите целое число!", reply_markup=kb.admin_cancel_markup)
+
 
 # Обработаем нажатие на кнопку для подтверждения/отмены создания мероприятия
 
@@ -326,7 +345,8 @@ async def confirm_create_event_callback(callback: CallbackQuery, state: FSMConte
         event_name: str = data_from_state.get("name")
         event_date: str = data_from_state.get("date")
         event_description: str = data_from_state.get("description")
-        await add_event_to_table(event_name=event_name, event_description=event_description, event_date=event_date)
+        event_limit: int = data_from_state.get("limit")
+        await add_event_to_table(event_name=event_name, event_description=event_description, event_date=event_date, event_limit=event_limit)
         await callback.message.answer("Мероприятие добавлено!", reply_markup=kb.admin_panel)
         await state.clear()
     else:

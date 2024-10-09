@@ -7,10 +7,14 @@ engine = create_async_engine(url="sqlite+aiosqlite:///db.sqlite3")
 async_session = async_sessionmaker(engine)
 
 # Создаём родительский класс для построения моделей
+
+
 class Base(AsyncAttrs, DeclarativeBase):
     pass
 
 # Таблица с забаненными пользователями
+
+
 class BannedUser(Base):
     __tablename__ = "banned_users"
 
@@ -18,6 +22,8 @@ class BannedUser(Base):
     chat_id: Mapped[int] = mapped_column(Integer)
 
 # Таблица с пользователями, которые находятся в рассылке
+
+
 class UserInMailing(Base):
     __tablename__ = "users_in_mailing"
 
@@ -25,6 +31,8 @@ class UserInMailing(Base):
     chat_id: Mapped[int] = mapped_column(Integer)
 
 # Таблица с айди чата администраторов
+
+
 class Admin(Base):
     __tablename__ = "admins"
 
@@ -32,16 +40,21 @@ class Admin(Base):
     chat_id: Mapped[int] = mapped_column(Integer)
 
 # Таблица для мероприятий
+
+
 class Event(Base):
     __tablename__ = "events"
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(60))
     date: Mapped[str] = mapped_column(String(14))
+    limit: Mapped[int] = mapped_column(Integer, default=40)
     description: Mapped[str] = mapped_column(String(150))
     is_signup_open: Mapped[int] = mapped_column(Integer)
 
 # Таблица для записавшихся на меропрития пользователей
+
+
 class EventSingUp(Base):
     __tablename__ = "event_singup"
 
@@ -53,6 +66,8 @@ class EventSingUp(Base):
     event_id: Mapped[int] = mapped_column(ForeignKey(Event.id))
 
 # При запуске главного файла создаём таблицы
+
+
 async def async_main():
     async with engine.begin() as conn:
-      await conn.run_sync(Base.metadata.create_all)
+        await conn.run_sync(Base.metadata.create_all)

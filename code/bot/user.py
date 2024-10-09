@@ -106,6 +106,19 @@ async def refresh_registered_users(message: Message, state: FSMContext):
 
 @user.message(EventCheck())
 async def btn_event_name_click(message: Message, state: FSMContext, event_name: str = None):
+    event_info_for_message = '''🎉Название мероприятия: {event_name}
+📆Дата и время проведения: <b>{event_date}</b>
+🎊Описание: {event_desc}
+👤Ограничение: <b>{event_limit} игроков</b>
+✏️Запись: {is_signup_open_str}\n'''
+
+    user_data_str = '''           
+📁Ваши данные :
+👤Ф.И: {signup_user_full_name}
+📞Телефон: {signup_user_phone}\n'''
+
+    registered_users_str = "\nСписок зарегистрированных пользователей:\n{registered_users_list}\n"
+
     if event_name is None:
         event_name = message.text
         await state.set_state(EventSignUp.event_name)
@@ -115,10 +128,9 @@ async def btn_event_name_click(message: Message, state: FSMContext, event_name: 
     await state.set_state(EventSignUp.event_name)
     chat_id = message.from_user.id
     event_info = await get_event_info_by_name(event_name=event_name)
-    print("event itmo", event_name)
-    print(event_info.__dict__)
     event_date = event_info.date
     event_desc = event_info.description
+    event_limit = event_info.limit
     is_signup_open = await check_is_signup_open(event_name=event_name)
     is_signup_open_str = "открыта" if is_signup_open is not None else "закрыта"
     event_status = 'unsigned' if is_signup_open is not None else ''
@@ -127,17 +139,17 @@ async def btn_event_name_click(message: Message, state: FSMContext, event_name: 
     registered_users = await get_signup_people(event_name=event_name)
 
     # Create a string with the list of registered users
-    registered_users_str = "Список зарегистрированных пользователей:\n"
+    registered_users_list = ""
     for i, (name, phone, _) in enumerate(zip(registered_users["Полное имя"], registered_users["Телефон"], registered_users["Айди чата"]), 1):
-        registered_users_str += f"{i}. {name} - {phone}\n"
+        registered_users_list += f"{i}. {name} - {phone}\n"
+    registered_users_str = registered_users_str.format(
+        registered_users_list=registered_users_list)
 
     if await check_signup(event_name=event_name, chat_id=chat_id) is None:
         await message.answer(
-            f"🎉Название мероприятия: {event_name}"
-            f"\n📆Дата и время проведения: {event_date}"
-            f"\n🎊Описание: {event_desc}"
-            f"\n✏️Запись: {is_signup_open_str}"
-            f"\n\n{registered_users_str}",
+            event_info_for_message.format(event_name=event_name, event_date=event_date, event_desc=event_desc, is_signup_open_str=is_signup_open_str, event_limit=event_limit) +
+            registered_users_str,
+            parse_mode="HTML",
             reply_markup=await kb.get_event_menu(rights="user", event_status=event_status, event_name=event_name)
         )
     else:
@@ -147,24 +159,19 @@ async def btn_event_name_click(message: Message, state: FSMContext, event_name: 
 
         if await check_go_to_event(event_name=event_name, chat_id=chat_id) is not None:
             await message.answer(
-                f"🎉Название мероприятия: {event_name}"
-                f"\n📆Дата и время проведения: {event_date}"
-                f"\n🎊Описание: {event_desc}"
-                f"\n📁Ваши данные :\n👤Ф.И: {signup_user_full_name}"
-                f"\n📞Телефон: {signup_user_phone}"
-                f"\n🛎Статус : пойду"
-                f"\n✏️Запись: {is_signup_open_str}"
-                f"\n\n{registered_users_str}",
+                event_info_for_message.format(event_name=event_name, event_date=event_date, event_desc=event_desc, is_signup_open_str=is_signup_open_str, event_limit=event_limit) +
+                "🛎Статус : пойду\n" +
+                registered_users_str,
+                parse_mode="HTML",
                 reply_markup=await kb.get_event_menu(rights="user", event_status="signed", event_name=event_name)
             )
         else:
             await message.answer(
-                f"🎉Название мероприятия: {event_name}\n🎊Описание: {event_desc}"
-                f"\n📁Ваши данные : "
-                f"\n👤Ф.И: {signup_user_full_name}"
-                f"\n📞Телефон: {signup_user_phone}"
+                event_info_for_message.format(event_name=event_name, event_date=event_date, event_desc=event_desc, is_signup_open_str=is_signup_open_str, event_limit=event_limit) +
+                user_data_str.format(signup_user_full_name=signup_user_full_name, signup_user_phone=signup_user_phone) +
                 f"\n🛎Статус : не пойду"
                 f"\n\n{registered_users_str}",
+                parse_mode="HTML",
                 reply_markup=await kb.get_event_menu(rights="user", event_name=event_name)
             )
 
@@ -219,9 +226,15 @@ async def btn_signup_click(message: Message, state: FSMContext):
     if await check_is_signup_open(event_name=event_name) is not None:
         # Проверка записи на мерпориятие
         if await check_signup(event_name=event_name, chat_id=message.from_user.id) is None:
-            await message.answer("Введите фамилию и имя!\nПример : Иванов Иван",
-                                 reply_markup=await kb.get_user_cancel_button())
-            await state.set_state(EventSignUp.full_name)
+            # Check if the event has reached its limit
+            current_signups = len(await get_signup_people(event_name=event_name))
+            event_info = await get_event_info_by_name(event_name=event_name)
+            if current_signups < event_info.limit:
+                await message.answer("Введите фамилию и имя!\nПример : Иванов Иван",
+                                     reply_markup=await kb.get_user_cancel_button())
+                await state.set_state(EventSignUp.full_name)
+            else:
+                await message.answer("К сожалению, достигнут лимит участников для этого мероприятия.")
         else:
             await message.answer("Вы уже записались на это мерпориятие!")
     else:

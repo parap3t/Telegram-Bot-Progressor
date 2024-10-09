@@ -85,10 +85,14 @@ async def check_admin(*, chat_id: int):
 
 
 async def add_event_to_table(*, event_name: str, event_description: str,
-                             event_date: str, is_signup_open: int = 1):
+                             event_date: str, is_signup_open: int = 1,
+                             event_limit: int = 40
+                             ):
     async with async_session() as session:
         session.add(Event(name=event_name, description=event_description,
-                          date=event_date, is_signup_open=is_signup_open))
+                          date=event_date,
+                          limit=event_limit,
+                          is_signup_open=is_signup_open))
         await session.commit()
 
 
