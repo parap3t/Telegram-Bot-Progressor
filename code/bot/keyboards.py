@@ -6,17 +6,27 @@ LEVEL_DESCR = [
     {
         "level_id": 1,
         "level_symbol": "🟢",
-        "level_name": "Новичок"
+        "level_name": "Новичок",
     },
     {
         "level_id": 2,
         "level_symbol": "🟡",
-        "level_name": "Средний"
+        "level_name": "База",
     },
     {
         "level_id": 3,
+        "level_symbol": "🔵",
+        "level_name": "Уверенная база",
+    },
+    {
+        "level_id": 4,
+        "level_symbol": "🟠",
+        "level_name": "Опытный, уровень 1"
+    },
+    {
+        "level_id": 5,
         "level_symbol": "🔴",
-        "level_name": "Продвинутый"
+        "level_name": "Эксперт",
     }
 ]
 
