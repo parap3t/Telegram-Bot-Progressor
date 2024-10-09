@@ -7,7 +7,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from database.requests import (check_ban, check_event_by_name, add_in_mailing, get_event_info_by_name, check_signup,
                                check_go_to_event, get_full_info_about_singup_user, change_signup_status, add_signup_user,
-                               get_count_of_events, check_is_signup_open)
+                               get_count_of_events, check_is_signup_open, get_signup_people)
 from re import compile, search
 
 # Чтобы не писать dispatcher 2-й раз заменим его на роутер
@@ -94,48 +94,79 @@ async def btn_back_click(message: Message, state: FSMContext):
 # Обработка нажатий кнопок с названием мероприятий
 
 
+@user.message(F.text == "🔄Обновить список")
+async def refresh_registered_users(message: Message, state: FSMContext):
+    data = await state.get_data()
+    event_name = data.get('event_name')
+    if event_name:
+        await btn_event_name_click(message, state, event_name)
+    else:
+        await message.answer("Извините, не удалось обновить список. Пожалуйста, выберите мероприятие заново.")
+
+
 @user.message(EventCheck())
-async def btn_event_name_click(message: Message, state: FSMContext):
+async def btn_event_name_click(message: Message, state: FSMContext, event_name: str = None):
+    if event_name is None:
+        event_name = message.text
+        await state.set_state(EventSignUp.event_name)
+        await state.update_data(event_name=event_name)
+        await message.answer_sticker("CAACAgIAAxkBAAEDpPBl1WcOfjU0kJaSf9y882BG36ONiwACMw4AApVxCUiC2Rae9Yv1wzQE")
+
     await state.set_state(EventSignUp.event_name)
-    await state.update_data(event_name=message.text)
-    await message.answer_sticker("CAACAgIAAxkBAAEDpPBl1WcOfjU0kJaSf9y882BG36ONiwACMw4AApVxCUiC2Rae9Yv1wzQE")
-    event_name = message.text
     chat_id = message.from_user.id
     event_info = await get_event_info_by_name(event_name=event_name)
+    print("event itmo", event_name)
+    print(event_info.__dict__)
     event_date = event_info.date
     event_desc = event_info.description
     is_signup_open = await check_is_signup_open(event_name=event_name)
     is_signup_open_str = "открыта" if is_signup_open is not None else "закрыта"
     event_status = 'unsigned' if is_signup_open is not None else ''
+
+    # Get the list of registered users
+    registered_users = await get_signup_people(event_name=event_name)
+
+    # Create a string with the list of registered users
+    registered_users_str = "Список зарегистрированных пользователей:\n"
+    for i, (name, phone, _) in enumerate(zip(registered_users["Полное имя"], registered_users["Телефон"], registered_users["Айди чата"]), 1):
+        registered_users_str += f"{i}. {name} - {phone}\n"
+
     if await check_signup(event_name=event_name, chat_id=chat_id) is None:
-        await message.answer(f"🎉Название мероприятия: {event_name}"
-                             f"\n📆Дата и время проведения: {event_date}"
-                             f"\n🎊Описание: {event_desc}"
-                             f"\n✏️Запись: {is_signup_open_str}",
-                             reply_markup=await kb.get_event_menu(rights="user",
-                                                                  event_status=event_status))
+        await message.answer(
+            f"🎉Название мероприятия: {event_name}"
+            f"\n📆Дата и время проведения: {event_date}"
+            f"\n🎊Описание: {event_desc}"
+            f"\n✏️Запись: {is_signup_open_str}"
+            f"\n\n{registered_users_str}",
+            reply_markup=await kb.get_event_menu(rights="user", event_status=event_status, event_name=event_name)
+        )
     else:
-        full_info_about_signup_user = await get_full_info_about_singup_user(event_name=event_name,
-                                                                            chat_id=chat_id)
+        full_info_about_signup_user = await get_full_info_about_singup_user(event_name=event_name, chat_id=chat_id)
         signup_user_full_name = full_info_about_signup_user.full_name
         signup_user_phone = full_info_about_signup_user.phone
-        is_signup_open_str = "открыта" if is_signup_open is not None else "закрыта"
 
         if await check_go_to_event(event_name=event_name, chat_id=chat_id) is not None:
-            await message.answer(f"🎉Название мероприятия: {event_name}"
-                                 f"\n📆Дата и время проведения: {event_date}"
-                                 f"\n🎊Описание: {event_desc}"
-                                 f"\n📁Ваши данные :\n👤Ф.И: {signup_user_full_name}"
-                                 f"\n📞Телефон: {signup_user_phone}"
-                                 f" \n🛎Статус : пойду"
-                                 f"\n✏️Запись: {is_signup_open_str}",
-                                 reply_markup=await kb.get_event_menu(rights="user", event_status="signed"))
+            await message.answer(
+                f"🎉Название мероприятия: {event_name}"
+                f"\n📆Дата и время проведения: {event_date}"
+                f"\n🎊Описание: {event_desc}"
+                f"\n📁Ваши данные :\n👤Ф.И: {signup_user_full_name}"
+                f"\n📞Телефон: {signup_user_phone}"
+                f"\n🛎Статус : пойду"
+                f"\n✏️Запись: {is_signup_open_str}"
+                f"\n\n{registered_users_str}",
+                reply_markup=await kb.get_event_menu(rights="user", event_status="signed", event_name=event_name)
+            )
         else:
-            await message.answer(f"🎉Название мероприятия: {event_name}\n🎊Описание: {event_desc}"
-                                 f"\n📁Ваши данные : "
-                                 f"\n👤Ф.И: {signup_user_full_name}"
-                                 f"\n📞Телефон: {signup_user_phone}"
-                                 f"\n🛎Статус : не пойду", reply_markup=await kb.get_event_menu(rights="user"))
+            await message.answer(
+                f"🎉Название мероприятия: {event_name}\n🎊Описание: {event_desc}"
+                f"\n📁Ваши данные : "
+                f"\n👤Ф.И: {signup_user_full_name}"
+                f"\n📞Телефон: {signup_user_phone}"
+                f"\n🛎Статус : не пойду"
+                f"\n\n{registered_users_str}",
+                reply_markup=await kb.get_event_menu(rights="user", event_name=event_name)
+            )
 
 
 @user.message(F.text == "❌Я не приду", EventSignUp.event_name)
