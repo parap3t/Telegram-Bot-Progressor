@@ -31,18 +31,20 @@ async def get_level_keyboard():
 
 # Кнопки со ссылками на контакты
 our_contacts = InlineKeyboardMarkup(inline_keyboard=[
+                                    # [InlineKeyboardButton(
+                                    #     text="ВКонтакте", url="https://vk.com/progressor45")],
                                     [InlineKeyboardButton(
-                                        text="ВКонтакте", url="https://vk.com/progressor45")],
+                                        text="Телеграм канал", url="t.me/mafia_itmo")],
                                     [InlineKeyboardButton(
-                                        text="Телеграм", url="https://t.me/progressor45")]
+                                        text="Телеграм чат", url="https://t.me/+5imdCNlmHW05Njdi")],
+                                    [InlineKeyboardButton(
+                                        text="Главный организатор", url="https://t.me/high_fly_bird")],
                                     ])
 
 # Кнопки со ссылками на техническую поддержку
 tech_support = InlineKeyboardMarkup(inline_keyboard=[
                                     [InlineKeyboardButton(
-                                        text="ВКонтакте", url="https://vk.com/parap3t")],
-                                    [InlineKeyboardButton(
-                                        text="Телеграм", url="https://t.me/parap3t")]
+                                        text="Все баги описывайте в чате", url="https://t.me/+5imdCNlmHW05Njdi")]
                                     ])
 
 # Панель администратора

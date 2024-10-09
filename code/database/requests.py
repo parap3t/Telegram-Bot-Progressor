@@ -1,3 +1,4 @@
+from sqlalchemy import and_
 from utils import setup_logger
 from database.models import Admin, BannedUser, UserInMailing, Event, EventSingUp
 from database.models import async_session
@@ -127,19 +128,54 @@ async def get_event_info_by_name(*, event_name: str):
 async def add_signup_user(*, event_name: str, full_name: str, phone: str, chat_id: int, level: str, username: str):
     async with async_session() as session:
         id_of_event = (await session.scalar(select(Event).where(Event.name == event_name))).id
-        session.add(EventSingUp(chat_id=chat_id, full_name=full_name,
-                                phone=phone, event_id=id_of_event,
-                                level=level,
-                                username=username,
-                                event_status=1))
+        existing_signup = await session.scalar(
+            select(EventSingUp).where(
+                and_(
+                    EventSingUp.event_id == id_of_event,
+                    EventSingUp.chat_id == chat_id
+                )
+            )
+        )
+        if existing_signup:
+            if existing_signup.event_status != 1:
+                # Удаляем существующую запись
+                await session.delete(existing_signup)
+                # Создаём новую запись
+                session.add(EventSingUp(
+                    chat_id=chat_id,
+                    full_name=full_name,
+                    phone=phone,
+                    event_id=id_of_event,
+                    level=level,
+                    username=username,
+                    event_status=1
+                ))
+        else:
+            # Создаём новую запись
+            session.add(EventSingUp(
+                chat_id=chat_id,
+                full_name=full_name,
+                phone=phone,
+                event_id=id_of_event,
+                level=level,
+                username=username,
+                event_status=1
+            ))
         await session.commit()
 
 
 async def check_signup(*, event_name: str, chat_id: int):
     async with async_session() as session:
         id_of_event = (await session.scalar(select(Event).where(Event.name == event_name))).id
-        return await session.scalar(select(EventSingUp).where((EventSingUp.event_id == id_of_event) &
-                                                              (EventSingUp.chat_id == chat_id)))
+        return await session.scalar(
+            select(EventSingUp).where(
+                and_(
+                    EventSingUp.event_id == id_of_event,
+                    EventSingUp.chat_id == chat_id,
+                    EventSingUp.event_status == 1  # Проверяем только активные записи
+                )
+            )
+        )
 
 
 async def check_go_to_event(*, event_name: str, chat_id: int):
