@@ -81,7 +81,7 @@ class EventChoice(StatesGroup):
 
 @admin.message(AdminProtect(), CommandStart())
 async def start_command(message: Message):
-    await message.answer_sticker("CAACAgIAAxkBAAEFm5ZmTgIqpv3A8pzMD_lR3EsFPA0u8gACXAwAAj0zCEiRSKTz6TfmmDUE")
+    await message.answer_sticker("CAACAgIAAxkBAAEuTUVnBrozLFYSUZMvbHFKt2wY4tPUggAC-AgAAlwCZQPhVpkp0NcHSTYE")
     await message.answer(f"Добро пожаловать, {message.from_user.first_name}!", reply_markup=await kb.get_start_menu(rights="admin"))
 
 

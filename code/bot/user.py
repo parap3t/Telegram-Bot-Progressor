@@ -279,7 +279,7 @@ async def level_selection_callback(callback: CallbackQuery, state: FSMContext):
     if selected_level:
         await state.update_data(level=selected_level)
         await callback.message.answer(
-            "Поделитесь своим номером телефона, нажав на кнопку '📞Отправить'",
+            "Поделитесь своим номером телефона, нажав на кнопку '📞Отправить'. Телефон никто не увидит.",
             reply_markup=await kb.get_user_cancel_button(addition="phone")
         )
         await state.set_state(EventSignUp.phone)
