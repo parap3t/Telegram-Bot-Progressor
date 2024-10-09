@@ -125,7 +125,7 @@ async def get_event_info_by_name(*, event_name: str):
         return await session.scalar(select(Event).where(Event.name == event_name))
 
 
-async def add_signup_user(*, event_name: str, full_name: str, phone: str, chat_id: int, level: str, username: str):
+async def add_signup_user(*, event_name: str, full_name: str, chat_id: int, level: str, username: str):
     async with async_session() as session:
         id_of_event = (await session.scalar(select(Event).where(Event.name == event_name))).id
         existing_signup = await session.scalar(
@@ -144,7 +144,6 @@ async def add_signup_user(*, event_name: str, full_name: str, phone: str, chat_i
                 session.add(EventSingUp(
                     chat_id=chat_id,
                     full_name=full_name,
-                    phone=phone,
                     event_id=id_of_event,
                     level=level,
                     username=username,
@@ -155,7 +154,6 @@ async def add_signup_user(*, event_name: str, full_name: str, phone: str, chat_i
             session.add(EventSingUp(
                 chat_id=chat_id,
                 full_name=full_name,
-                phone=phone,
                 event_id=id_of_event,
                 level=level,
                 username=username,
@@ -219,7 +217,7 @@ async def get_signup_people(*, event_name: str):
         id_of_event = (await session.scalar(select(Event).where(Event.name == event_name))).id
         people: dict = {
             "Полное имя": [],
-            "Телефон": [],
+            # "Телефон": [],
             "Айди чата": [],
             "Уровень": [],
             "Никнейм": [],
@@ -228,7 +226,7 @@ async def get_signup_people(*, event_name: str):
                                                                         (EventSingUp.event_id == id_of_event)))
         for user in signup_people:
             people["Полное имя"] += [user.full_name]
-            people["Телефон"] += [user.phone]
+            # people["Телефон"] += [user.phone]
             people["Айди чата"] += [user.chat_id]
             people["Уровень"] += [user.level]
             people["Никнейм"] += [user.username]

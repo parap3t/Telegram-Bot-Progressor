@@ -35,7 +35,6 @@ class EventSignUp(StatesGroup):
     full_name = State()
     id = State()
     level = State()
-    phone = State()
     username = State()
     confirm = State()
 
@@ -116,8 +115,8 @@ async def btn_event_name_click(message: Message, state: FSMContext, event_name: 
 
     user_data_str = '''
 📁Ваши данные :
-👤Ф.И: {signup_user_full_name}
-📞Телефон: {signup_user_phone}\n'''
+👤Ник: {signup_user_full_name}\n
+'''
 
     registered_users_str = "\nСписок зарегистрированных пользователей:\n{registered_users_list}\n"
 
@@ -176,7 +175,6 @@ async def btn_event_name_click(message: Message, state: FSMContext, event_name: 
     else:
         full_info_about_signup_user = await get_full_info_about_singup_user(event_name=event_name, chat_id=chat_id)
         signup_user_full_name = full_info_about_signup_user.full_name
-        signup_user_phone = full_info_about_signup_user.phone
 
         if await check_go_to_event(event_name=event_name, chat_id=chat_id) is not None:
             await message.answer(
@@ -189,7 +187,7 @@ async def btn_event_name_click(message: Message, state: FSMContext, event_name: 
         else:
             await message.answer(
                 event_info_for_message.format(event_name=event_name, event_date=event_date, event_desc=event_desc, is_signup_open_str=is_signup_open_str, event_limit=event_limit) +
-                user_data_str.format(signup_user_full_name=signup_user_full_name, signup_user_phone=signup_user_phone) +
+                user_data_str.format(signup_user_full_name=signup_user_full_name) +
                 f"\n🛎Статус : не пойду"
                 f"\n\n{registered_users_str}",
                 parse_mode="HTML",
@@ -286,42 +284,26 @@ async def level_selection_callback(callback: CallbackQuery, state: FSMContext):
 
     if selected_level:
         await state.update_data(level=selected_level)
-        await callback.message.answer(
-            "Поделитесь своим номером телефона, нажав на кнопку '📞Отправить'. Телефон никто не увидит.",
-            reply_markup=await kb.get_user_cancel_button(addition="phone")
-        )
-        await state.set_state(EventSignUp.phone)
-    else:
-        await callback.message.answer("Ошибка выбора уровня. Попробуйте снова.")
-
-
-@ user.message(EventSignUp.phone)
-async def wait_phone(message: Message, state: FSMContext):
-    if message.contact is not None:
-        await state.update_data(phone=message.contact.phone_number)
-        await state.update_data(id=message.from_user.id)
+        await state.update_data(id=callback.from_user.id)
         data_from_state: dict = await state.get_data()
         event_name: str = data_from_state.get("event_name")
-        username = message.from_user.username if message.from_user.username else "No username"
+        username = callback.from_user.username if callback.from_user.username else "No username"
         await state.update_data(username=username)
         full_name: str = data_from_state.get("full_name")
         user_level_dict: dict = data_from_state.get("level")
-        await message.answer(f"Подтвердите запись на мероприятие!"
+        await callback.message.answer(f"Подтвердите запись на мероприятие!"
                              f"\n🎉Название мероприятия : {event_name}"
                              f"\n📒Ваши данные : "
                              f"\n👤Игровой ник : {full_name}"
                              f"\n👤Уровень : {user_level_dict['level_symbol']}"
-                             f"\n📞Номер телефона : {message.contact.phone_number}"
                              f"\n👤Ваш Telegram ник : @{username}",
                              reply_markup=await kb.get_confirm_menu("confirm_signup"))
         await state.set_state(EventSignUp.confirm)
     else:
-        await message.answer("Некорректный номер телефона!\nПопробуйте ещё раз!",
-                             reply_markup=await kb.get_user_cancel_button(addition="phone"))
+        await callback.message.answer("Ошибка выбора уровня. Попробуйте снова.")
+
 
 # Обработаем кнопку для подтверждения/отмены удаления мероприятия
-
-
 @ user.callback_query(EventSignUp.confirm)
 async def confirm_signup_callback(callback: CallbackQuery, state: FSMContext):
     await callback.message.delete()
@@ -329,7 +311,6 @@ async def confirm_signup_callback(callback: CallbackQuery, state: FSMContext):
         data_from_state: dict = await state.get_data()
         event_name: str = data_from_state.get("event_name")
         user_full_name: str = data_from_state.get("full_name")
-        user_phone: str = data_from_state.get("phone")
         username: str = data_from_state.get("username")
 
         user_chat_id: str = data_from_state.get("id")
@@ -339,7 +320,6 @@ async def confirm_signup_callback(callback: CallbackQuery, state: FSMContext):
         await add_signup_user(
             event_name=event_name,
             full_name=user_full_name,
-            phone=user_phone,
             chat_id=user_chat_id,
             username=username,
             level=user_level['level_id']  # Передаем уровень

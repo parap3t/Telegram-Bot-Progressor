@@ -60,7 +60,6 @@ class EventSingUp(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     full_name: Mapped[str] = mapped_column(String(100))
-    phone: Mapped[int] = mapped_column(Integer)
     chat_id: Mapped[int] = mapped_column(Integer)
     event_status: Mapped[int] = mapped_column(Integer)
     level: Mapped[int] = mapped_column(Integer)
