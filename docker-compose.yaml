@@ -1,8 +1,13 @@
+version: '3.8'
+
 services:
   bot:
-    build: .
+    image: ghcr.io/vyasma-mafia/mafia-itmo-event-manager:main
+    env_file:
+      - .env
     volumes:
       - ./data:/app/data
     environment:
+      - PYTHONUNBUFFERED=1
       - DATABASE_URL=sqlite:///data/db.sqlite3
-    restart: unless-stopped
+    restart: always
