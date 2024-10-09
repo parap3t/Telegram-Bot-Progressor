@@ -11,7 +11,7 @@ et-xmlfile==1.1
 frozenlist==1.4.1
 greenlet==3.0.3
 idna==3.7
-magic-filter==1.0.
+magic-filter==1.0.12
 multidict==6.0.5
 numpy==2.0.1
 openpyxl==3.1.5
