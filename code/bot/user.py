@@ -87,6 +87,8 @@ async def help_command (message: Message):
     for link in links:
         help_message += f"\n\t- <a href='{link['link']}'>{link['text']}</a>"
     help_message += "\nГостям необходимо заполнять форму на каждый вечер <b>до 11 утра среды.</b>"
+    
+    help_message += '\n\nРазработчики:\n🦋 <a href="https://t.me/high_fly_bird">госпожа Фиалка</a>\n🚴‍♂️ <a href="https://t.me/MrAlex18">господин Велосипедостроитель</a>'
 
 
     await message.answer(help_message,
