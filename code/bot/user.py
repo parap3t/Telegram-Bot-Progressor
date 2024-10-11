@@ -61,6 +61,39 @@ async def start_command(message: Message):
     await message.answer(f"Добро пожаловать, {message.from_user.first_name}!", reply_markup=await kb.get_start_menu(rights="user"))
 
 
+@user.message(Command("help"))
+async def help_command (message: Message):
+    
+    links = [
+        {
+            'text': 'Форма для записи гостей из других вузов',
+            'link': 'https://docs.google.com/forms/d/e/1FAIpQLSc_7Rk5dLkdqSYCwFx9RrX0JsUyIuEqI6JWrj_7iVQlAtmcbA/viewform'
+        },
+        {
+            'text': 'Как зарегистрироваться в клубе в приложении Polemica?',
+            'link': 'https://t.me/mafia_itmo/54',
+        },
+        {
+            'text': 'Информация об уровнях игры',
+            'link': 'https://t.me/mafia_itmo/64'
+        }
+        
+    ]
+    
+    help_message = """<b>Добро пожаловать в раздел помощи!</b>
+    Для того, чтоб записаться на вечер нажмите "Мероприятия" и выберите интересующий вас вечер. Если вы не пойдёте на вечер, то отмените запись, чтобы другие игроки могли записаться. Ждём вас на играх!
+    \nПолезные ссылки:
+    """
+    for link in links:
+        help_message += f"\n\t- <a href='{link['link']}'>{link['text']}</a>"
+    help_message += "\nГостям необходимо заполнять форму на каждый вечер <b>до 11 утра среды.</b>"
+
+
+    await message.answer(help_message,
+                         parse_mode="HTML",
+                         reply_markup=await kb.get_start_menu(rights="user"))
+
+
 @user.message(F.text == "🚫Отмена")
 async def btn_cancel_click(message: Message, state: FSMContext):
     await state.set_state(EventSignUp.event_name)
