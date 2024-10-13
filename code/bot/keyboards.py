@@ -108,6 +108,7 @@ async def get_start_menu(*, rights: str):
     else:
         keyboard.add(KeyboardButton(text="👤Наши контакты"))
     keyboard.add(KeyboardButton(text="💻Тех поддержка"))
+    keyboard.add(KeyboardButton(text="/help"))
     return keyboard.adjust(1).as_markup(resize_keyboard=True, input_field_placeholder="Выберите пункт меню...")
 
 
