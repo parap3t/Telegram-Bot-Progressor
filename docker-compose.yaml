@@ -9,5 +9,5 @@ services:
       - ./data:/app/data
     environment:
       - PYTHONUNBUFFERED=1
-      - DATABASE_URL=sqlite:///data/db.sqlite3
+      - DB_FILE=data/db.sqlite3
     restart: always

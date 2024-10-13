@@ -10,6 +10,9 @@ BOT_API = os.environ.get(
     "BOT_API", default=config_env.get("BOT_API"))
 ADMIN_CHAT_ID = os.environ.get(
     "ADMIN_CHAT_ID", default=config_env.get("ADMIN_CHAT_ID"))
+DB_FILE = os.environ.get(
+    "DB_FILE", default=config_env.get("DB_FILE", "db.sqlite3")
+)
 
 # ADMIN_CHAT_ID = config_env.get("ADMIN_CHAT_ID")
 # ADMIN_CHAT_ID = '..ADMIN_CHAT_ID'
