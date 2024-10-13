@@ -2,8 +2,10 @@ from sqlalchemy import String, Integer, ForeignKey
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
 
+from code.config import DB_FILE
+
 # Создаём бд и подключаемся к ней
-engine = create_async_engine(url="sqlite+aiosqlite:///db.sqlite3")
+engine = create_async_engine(url="sqlite+aiosqlite:///" + DB_FILE)
 async_session = async_sessionmaker(engine)
 
 # Создаём родительский класс для построения моделей
