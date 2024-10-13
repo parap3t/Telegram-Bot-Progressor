@@ -2,7 +2,7 @@ from sqlalchemy import String, Integer, ForeignKey
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
 
-from code.config import DB_FILE
+from config import DB_FILE
 
 # Создаём бд и подключаемся к ней
 engine = create_async_engine(url="sqlite+aiosqlite:///" + DB_FILE)
