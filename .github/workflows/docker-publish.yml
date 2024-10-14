@@ -75,28 +75,17 @@ jobs:
     needs: build  # Ensure the deploy job runs after the build job completes
     if: github.event_name == 'workflow_dispatch'
     steps:
-      - name: Debug
-        shell: bash
-        run: |
-          echo "GH_REPO: $VM_HOST"
-          echo "GH_REPO_O: $VM_SSH_KEY"
-          echo "GH_T: $VM_USER"
-        env:
-          VM_HOST: ${{ secrets.VM_HOST }}
-          VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}
-          VM_USER: ${{ secrets.VM_USER }}
       - name: Deploy Docker image to the VM
         uses: appleboy/ssh-action@v0.1.6
         with: 
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
-          debug: true
           script: |
             cd ~/event-manager-bot/mafia-itmo-event-manager
             echo "Pulling the latest git repo..."
             git pull
             echo "Pulling the latest Docker image..."
-            docker-compose -f pull
+            docker-compose pull
             echo "Restarting services..."
-            docker-compose -f up -d
+            docker-compose up -d
