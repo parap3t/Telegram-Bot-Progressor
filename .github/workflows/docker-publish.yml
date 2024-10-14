@@ -81,7 +81,7 @@ jobs:
           host: ${{ secrets.VM_HOST }}
           username: ${{ secrets.VM_USER }}
           key: ${{ secrets.VM_SSH_KEY }}
-          port: 22
+          debug: true
           script: |
             echo "Pulling the latest git repo..."
             git pull
