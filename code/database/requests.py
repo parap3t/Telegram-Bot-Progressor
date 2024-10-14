@@ -1,3 +1,4 @@
+import profile
 from sqlalchemy import and_
 from utils import setup_logger
 from database.models import Admin, BannedUser, UserInMailing, Event, EventSingUp, UserProfile
@@ -221,12 +222,15 @@ async def get_signup_people(*, event_name: str):
             "Айди чата": [],
             "Уровень": [],
             "Никнейм": [],
+            "вуз": []
         }
         signup_people = await session.scalars(select(EventSingUp).where((EventSingUp.event_status == 1) &
                                                                         (EventSingUp.event_id == id_of_event)))
         for user in signup_people:
+            user_profile_data = await get_user_profile(chat_id=user.chat_id)
             people["Полное имя"] += [user.full_name]
             # people["Телефон"] += [user.phone]
+            people["вуз"] += ["ИТМО" if user_profile_data.is_itmo else "Гость"]
             people["Айди чата"] += [user.chat_id]
             people["Уровень"] += [user.level]
             people["Никнейм"] += [user.username]

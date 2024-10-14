@@ -191,14 +191,15 @@ async def btn_event_name_click(message: Message, state: FSMContext, event_name: 
     nicks = registered_users['Полное имя']
     tgs = registered_users['Никнейм']
     levels = registered_users['Уровень']
+    colleges = registered_users['вуз']
     is_signup_open_str = "открыта" if len(nicks) < event_limit else "закрыта"
 
-    for i, (nick, level_id, username) in enumerate(zip(nicks, levels, tgs), start=1):
+    for i, (nick, level_id, username, college) in enumerate(zip(nicks, levels, tgs, colleges), start=1):
 
         level_symbol = next(
             (level['level_symbol'] for level in kb.LEVEL_DESCR if level['level_id'] == level_id), '')
 
-        registered_users_list += f"{i}. {nick} {level_symbol} - @{username}\n"
+        registered_users_list += f"{i}. {nick} {level_symbol} - @{username} - <i>{college}</i>\n"
 
     registered_users_str = registered_users_str.format(
         registered_users_list=registered_users_list)
