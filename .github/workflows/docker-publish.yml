@@ -93,9 +93,10 @@ jobs:
           key: ${{ secrets.VM_SSH_KEY }}
           debug: true
           script: |
+            cd ~/event-manager-bot/***-itmo-event-manager
             echo "Pulling the latest git repo..."
             git pull
             echo "Pulling the latest Docker image..."
-            docker-compose -f ~/event-manager-bot/mafia-itmo-event-manager/docker-compose.yml pull
+            docker-compose -f pull
             echo "Restarting services..."
-            docker-compose -f ~/event-manager-bot/mafia-itmo-event-manager/docker-compose.yml up -d
+            docker-compose -f up -d
