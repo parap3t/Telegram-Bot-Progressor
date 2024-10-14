@@ -1,4 +1,4 @@
-from sqlalchemy import String, Integer, ForeignKey
+from sqlalchemy import Boolean, String, Integer, ForeignKey
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
 
@@ -68,6 +68,17 @@ class EventSingUp(Base):
     event_id: Mapped[int] = mapped_column(ForeignKey(Event.id))
     username: Mapped[str] = mapped_column(String(100), nullable=True)
 
+# Таблица профилей
+
+
+class UserProfile(Base):
+    __tablename__ = "user_profiles"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    chat_id: Mapped[int] = mapped_column(Integer, unique=True)
+    nickname: Mapped[str] = mapped_column(String(100))
+    is_itmo: Mapped[bool] = mapped_column(Boolean)
+    level: Mapped[int] = mapped_column(Integer)
 # При запуске главного файла создаём таблицы
 
 

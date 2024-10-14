@@ -31,6 +31,12 @@ LEVEL_DESCR = [
 ]
 
 
+def get_level_info_by_id(level_id: int):
+    for level in LEVEL_DESCR:
+        if level["level_id"] == level_id:
+            return level
+
+
 async def get_level_keyboard():
     return InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(
@@ -76,6 +82,27 @@ admin_cancel_markup = ReplyKeyboardMarkup(keyboard=[
     resize_keyboard=True)
 
 
+async def get_user_cancel_button(*, addition: str = ""):
+    keyboard = ReplyKeyboardBuilder()
+    if addition == "phone":
+        keyboard.add(KeyboardButton(text="📞Отправить", request_contact=True))
+    keyboard.add(KeyboardButton(text="🚫Отмена"))
+    return keyboard.adjust(1).as_markup(resize_keyboard=True, input_field_placeholder="Нажмите на кнопку,если передумаете...")
+
+
+async def get_start_menu(*, rights: str):
+    keyboard = ReplyKeyboardBuilder()
+    keyboard.add(KeyboardButton(text="🎉Мероприятия"))
+    keyboard.add(KeyboardButton(text="📝Редактировать профиль"))
+    if rights == "admin":
+        keyboard.add(KeyboardButton(text=f"⚙️Админ панель"))
+    else:
+        keyboard.add(KeyboardButton(text="👤Наши контакты"))
+    keyboard.add(KeyboardButton(text="💻Тех поддержка"))
+    keyboard.add(KeyboardButton(text="/help"))
+    return keyboard.adjust(1).as_markup(resize_keyboard=True, input_field_placeholder="Выберите пункт меню...")
+
+
 async def get_event_menu(*, rights: str, event_status: str = "", event_name: str = ""):
     keyboard = ReplyKeyboardBuilder()
     if rights == "admin":
@@ -89,26 +116,6 @@ async def get_event_menu(*, rights: str, event_status: str = "", event_name: str
     keyboard.add(KeyboardButton(text="🔄Обновить список"))
     keyboard.add(KeyboardButton(text="🔙Назад"))
 
-    return keyboard.adjust(1).as_markup(resize_keyboard=True, input_field_placeholder="Выберите пункт меню...")
-
-
-async def get_user_cancel_button(*, addition: str = ""):
-    keyboard = ReplyKeyboardBuilder()
-    if addition == "phone":
-        keyboard.add(KeyboardButton(text="📞Отправить", request_contact=True))
-    keyboard.add(KeyboardButton(text="🚫Отмена"))
-    return keyboard.adjust(1).as_markup(resize_keyboard=True, input_field_placeholder="Нажмите на кнопку,если передумаете...")
-
-
-async def get_start_menu(*, rights: str):
-    keyboard = ReplyKeyboardBuilder()
-    keyboard.add(KeyboardButton(text="🎉Мероприятия"))
-    if rights == "admin":
-        keyboard.add(KeyboardButton(text=f"⚙️Админ панель"))
-    else:
-        keyboard.add(KeyboardButton(text="👤Наши контакты"))
-    keyboard.add(KeyboardButton(text="💻Тех поддержка"))
-    keyboard.add(KeyboardButton(text="/help"))
     return keyboard.adjust(1).as_markup(resize_keyboard=True, input_field_placeholder="Выберите пункт меню...")
 
 
@@ -130,3 +137,9 @@ async def get_events_names_buttons():
         keyboard.add(KeyboardButton(text=f"{event.name}"))
     keyboard.add(KeyboardButton(text="👈Назад"))
     return keyboard.adjust(1).as_markup(resize_keyboard=True, input_field_placeholder="Выберите пункт меню...")
+
+are_u_from_itmo_keyboard = ReplyKeyboardMarkup(keyboard=[
+    [KeyboardButton(text="Да, я из ИТМО"),
+     KeyboardButton(text="Нет, я не из ИТМО")]],
+    resize_keyboard=True
+)
