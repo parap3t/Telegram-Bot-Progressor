@@ -2,7 +2,8 @@ version: '3.8'
 
 services:
   bot:
-    image: ghcr.io/vyasma-mafia/mafia-itmo-event-manager-bot:main
+    # image: ghcr.io/vyasma-mafia/mafia-itmo-event-manager-bot:main
+    build: .
     env_file:
       - .env
     volumes:
