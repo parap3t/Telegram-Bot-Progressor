@@ -1,6 +1,6 @@
 from sqlalchemy import and_
 from utils import setup_logger
-from database.models import Admin, BannedUser, UserInMailing, Event, EventSingUp
+from database.models import Admin, BannedUser, UserInMailing, Event, EventSingUp, UserProfile
 from database.models import async_session
 from config import ADMIN_CHAT_ID, BOT_API
 from sqlalchemy import select, delete, update, func
@@ -234,3 +234,29 @@ async def get_signup_people(*, event_name: str):
             # telegram_user = await bot.get_chat(user.chat_id)
             # people["Никнейм"].append(telegram_user.username)
         return people
+
+
+# Сохранение и получение профиля
+async def save_user_profile(chat_id: int,
+                            nickname: str,
+                            is_itmo: bool,
+                            level: int,
+                            ):
+    async with async_session() as session:
+        profile = await session.scalar(select(UserProfile).where(UserProfile.chat_id == chat_id))
+        if profile:
+            profile.nickname = nickname
+            profile.level = level
+            profile.is_itmo = is_itmo
+        else:
+            session.add(UserProfile(chat_id=chat_id,
+                        nickname=nickname,
+                        is_itmo=is_itmo,
+                        level=level
+                                    ))
+        await session.commit()
+
+
+async def get_user_profile(chat_id: int):
+    async with async_session() as session:
+        return await session.scalar(select(UserProfile).where(UserProfile.chat_id == chat_id))

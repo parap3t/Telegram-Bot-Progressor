@@ -5,10 +5,12 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.filters import Command, CommandStart, Filter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
+from utils import setup_logger
 from database.requests import (check_ban, check_event_by_name, add_in_mailing, get_event_info_by_name, check_signup,
                                check_go_to_event, get_full_info_about_singup_user, change_signup_status, add_signup_user,
-                               get_count_of_events, check_is_signup_open, get_signup_people)
+                               get_count_of_events, check_is_signup_open, get_signup_people, get_user_profile, save_user_profile)
 from re import compile, search
+logger = setup_logger()
 
 # Чтобы не писать dispatcher 2-й раз заменим его на роутер
 user = Router()
@@ -37,6 +39,14 @@ class EventSignUp(StatesGroup):
     level = State()
     username = State()
     confirm = State()
+
+#  Состояние для создания профиля пользователя
+
+
+class ProfileEdit(StatesGroup):
+    nickname = State()
+    level = State()
+    is_itmo = State()
 
 # Обработаем команду айди
 
@@ -365,3 +375,76 @@ async def confirm_signup_callback(callback: CallbackQuery, state: FSMContext):
     else:
         await callback.message.answer("Отменяю запись!\nВведите ник снова.", reply_markup=await kb.get_user_cancel_button())
         await state.set_state(EventSignUp.full_name)
+
+# Обработка заполнения профиля
+
+
+@user.message(F.text == "📝Редактировать профиль")
+async def edit_profile(message: Message, state: FSMContext):
+    user_profile = await get_user_profile(chat_id=message.from_user.id)
+    message_to_send = ""
+    if user_profile:
+        profile_text = f"""Игровой ник: {user_profile.nickname}
+        Уровень: {kb.get_level_info_by_id(user_profile.level)['level_name']}
+        Из ИТМО: {user_profile.is_itmo}
+        """
+        message_to_send = f"Ваш профиль:\n{profile_text}\nПриступаем к пересозданию профиля...\n\n"
+    await message.answer(message_to_send+"Введите ваш никнейм:", reply_markup=await kb.get_user_cancel_button())
+    await state.set_state(ProfileEdit.nickname)
+
+
+@user.message(ProfileEdit.nickname)
+async def process_nickname(message: Message, state: FSMContext):
+    await state.update_data(nickname=message.text)
+    await message.answer("Вы из ИТМО?", reply_markup=kb.are_u_from_itmo_keyboard)
+    await state.set_state(ProfileEdit.is_itmo)
+
+
+@user.message(ProfileEdit.is_itmo)
+async def process_is_itmo(message: Message, state: FSMContext):
+    if message.text not in ["Да, я из ИТМО", "Нет, я не из ИТМО"]:
+        await message.answer("Пожалуйста, выберите 'Да, я из ИТМО' или 'Нет, я не из ИТМО'.")
+        return
+
+    await state.update_data(is_itmo=message.text == "Да, я из ИТМО")
+    await message.answer(
+        'Выберите свой уровень. Описание уровней есть в <a href="https://t.me/mafia_itmo/64">посте</a>',
+        reply_markup=await kb.get_level_keyboard(),
+        parse_mode="HTML"
+    )
+    await state.set_state(ProfileEdit.level)
+
+
+@user.callback_query(ProfileEdit.level)
+async def process_level(callback: CallbackQuery, state: FSMContext):
+    level_id = int(callback.data.split("_")[1])
+    selected_level = next(
+        (lvl for lvl in kb.LEVEL_DESCR if lvl["level_id"] == level_id), None)
+
+    if selected_level:
+        await state.update_data(level=selected_level)
+        data = await state.get_data()
+
+        nickname = data['nickname']
+        is_itmo = data['is_itmo']
+        level_data = data['level']
+
+        await save_user_profile(
+            chat_id=callback.from_user.id,
+            nickname=nickname,
+            is_itmo=is_itmo,
+            level=level_data['level_id'])
+
+        await callback.message.answer(
+            f"⭐️ Ваш профиль успешно обновлен!\n\n"
+            f"Игровой ник: <b>{nickname}</b>\n"
+            f"Уровень: <b>{level_data['level_name']}</b>\n"
+            f"ИТМО: <b>{'Да' if is_itmo else 'Нет'}</b>\n",
+            parse_mode="HTML",
+            reply_markup=await kb.get_start_menu(rights="user")
+        )
+        await callback.answer()
+        await state.clear()
+    else:
+        await callback.message.answer("Ошибка выбора уровня. Попробуйте снова.")
+        await callback.answer()
