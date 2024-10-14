@@ -76,7 +76,15 @@ jobs:
     if: github.event_name == 'workflow_dispatch'
     steps:
       - name: Debug
-        uses: hmarr/debug-action@v3
+        shell: bash
+        run: |
+          echo "GH_REPO: $VM_HOST"
+          echo "GH_REPO_O: $VM_SSH_KEY"
+          echo "GH_T: $VM_USER"
+        env:
+          VM_HOST: ${{ secrets.VM_HOST }}
+          VM_SSH_KEY: ${{ secrets.VM_SSH_KEY }}
+          VM_USER: ${{ secrets.VM_USER }}
       - name: Deploy Docker image to the VM
         uses: appleboy/ssh-action@v0.1.6
         with: 
