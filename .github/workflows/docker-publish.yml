@@ -93,7 +93,7 @@ jobs:
           key: ${{ secrets.VM_SSH_KEY }}
           debug: true
           script: |
-            cd ~/event-manager-bot/***-itmo-event-manager
+            cd ~/event-manager-bot/mafia-itmo-event-manager
             echo "Pulling the latest git repo..."
             git pull
             echo "Pulling the latest Docker image..."
