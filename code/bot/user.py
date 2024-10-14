@@ -62,12 +62,12 @@ async def start_command(message: Message):
 
 
 @user.message(Command("help"))
-async def help_command (message: Message):
-    
+async def help_command(message: Message):
+
     links = [
         {
             'text': 'Форма для записи гостей из других вузов',
-            'link': 'https://docs.google.com/forms/d/e/1FAIpQLSc_7Rk5dLkdqSYCwFx9RrX0JsUyIuEqI6JWrj_7iVQlAtmcbA/viewform'
+            'link': 'https://forms.yandex.ru/cloud/66f6cb8773cee77dbdffbd87/'
         },
         {
             'text': 'Как зарегистрироваться в клубе в приложении Polemica?',
@@ -77,19 +77,20 @@ async def help_command (message: Message):
             'text': 'Информация об уровнях игры',
             'link': 'https://t.me/mafia_itmo/64'
         }
-        
+
     ]
-    
+
     help_message = """<b>Добро пожаловать в раздел помощи!</b>
     Для того, чтоб записаться на вечер нажмите "Мероприятия" и выберите интересующий вас вечер. Если вы не пойдёте на вечер, то отмените запись, чтобы другие игроки могли записаться. Ждём вас на играх!
     \nПолезные ссылки:
     """
     for link in links:
         help_message += f"\n\t- <a href='{link['link']}'>{link['text']}</a>"
-    help_message += "\nГостям необходимо заполнять форму на каждый вечер <b>до 11 утра среды.</b>"
-    
-    help_message += '\n\nРазработчики:\n🦋 <a href="https://t.me/high_fly_bird">госпожа Фиалка</a>\n🚴‍♂️ <a href="https://t.me/MrAlex18">господин Велосипедостроитель</a>'
+    help_message += """\nГостям необходимо заполнять форму на каждый вечер <b>до 11 утра среды.</b>
+    Внимание: форма переехала на яндекс!
+    """
 
+    help_message += '\n\nРазработчики:\n🦋 <a href="https://t.me/high_fly_bird">госпожа Фиалка</a>\n🚴‍♂️ <a href="https://t.me/MrAlex18">господин Велосипедостроитель</a>'
 
     await message.answer(help_message,
                          parse_mode="HTML",
@@ -327,12 +328,12 @@ async def level_selection_callback(callback: CallbackQuery, state: FSMContext):
         full_name: str = data_from_state.get("full_name")
         user_level_dict: dict = data_from_state.get("level")
         await callback.message.answer(f"Подтвердите запись на мероприятие!"
-                             f"\n🎉Название мероприятия : {event_name}"
-                             f"\n📒Ваши данные : "
-                             f"\n👤Игровой ник : {full_name}"
-                             f"\n👤Уровень : {user_level_dict['level_symbol']}"
-                             f"\n👤Ваш Telegram ник : @{username}",
-                             reply_markup=await kb.get_confirm_menu("confirm_signup"))
+                                      f"\n🎉Название мероприятия : {event_name}"
+                                      f"\n📒Ваши данные : "
+                                      f"\n👤Игровой ник : {full_name}"
+                                      f"\n👤Уровень : {user_level_dict['level_symbol']}"
+                                      f"\n👤Ваш Telegram ник : @{username}",
+                                      reply_markup=await kb.get_confirm_menu("confirm_signup"))
         await state.set_state(EventSignUp.confirm)
     else:
         await callback.message.answer("Ошибка выбора уровня. Попробуйте снова.")
