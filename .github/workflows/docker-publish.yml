@@ -86,6 +86,6 @@ jobs:
             echo "Pulling the latest git repo..."
             git pull
             echo "Pulling the latest Docker image..."
-            docker-compose pull
+            docker compose pull
             echo "Restarting services..."
-            docker-compose up -d
+            docker compose up -d
