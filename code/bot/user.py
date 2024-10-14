@@ -110,20 +110,20 @@ async def help_command(message: Message):
 @user.message(F.text == "🚫Отмена")
 async def btn_cancel_click(message: Message, state: FSMContext):
     await state.set_state(EventSignUp.event_name)
-    await message.answer("Отменяю действие", reply_markup=await kb.get_event_menu(rights="user", event_status="unsigned"))
+    await message.answer("Отменяю действие", reply_markup=await kb.get_start_menu(rights="user"))
 
 
-@user.message(F.text == "👤Наши контакты")
+@ user.message(F.text == "👤Наши контакты")
 async def btn_contacts_click(message: Message):
     await message.answer("Наши контакты:", reply_markup=kb.our_contacts)
 
 
-@user.message(F.text == "💻Тех поддержка")
+@ user.message(F.text == "💻Тех поддержка")
 async def btn_support_click(message: Message):
     await message.answer("Техническая поддержка:", reply_markup=kb.tech_support)
 
 
-@user.message(F.text == "🎉Мероприятия")
+@ user.message(F.text == "🎉Мероприятия")
 async def btn_events_click(message: Message):
     # Проверяем количество существующих мероприятий
     if await get_count_of_events() == 0:
@@ -133,7 +133,7 @@ async def btn_events_click(message: Message):
                              reply_markup=await kb.get_events_names_buttons())
 
 
-@user.message(F.text == "👈Назад")
+@ user.message(F.text == "👈Назад")
 async def btn_back_click(message: Message, state: FSMContext):
     await state.clear()
     await message.answer("Открываю меню", reply_markup=await kb.get_start_menu(rights="user"))
@@ -141,7 +141,7 @@ async def btn_back_click(message: Message, state: FSMContext):
 # Обработка нажатий кнопок с названием мероприятий
 
 
-@user.message(F.text == "🔄Обновить список")
+@ user.message(F.text == "🔄Обновить список")
 async def refresh_registered_users(message: Message, state: FSMContext):
     data = await state.get_data()
     event_name = data.get('event_name')
@@ -151,7 +151,7 @@ async def refresh_registered_users(message: Message, state: FSMContext):
         await message.answer("Извините, не удалось обновить список. Пожалуйста, выберите мероприятие заново.")
 
 
-@user.message(EventCheck())
+@ user.message(EventCheck())
 async def btn_event_name_click(message: Message, state: FSMContext, event_name: str = None):
     event_info_for_message = '''🎉Название мероприятия: {event_name}
 📆Дата и время проведения: <b>{event_date}</b>
@@ -194,7 +194,6 @@ async def btn_event_name_click(message: Message, state: FSMContext, event_name: 
     is_signup_open_str = "открыта" if len(nicks) < event_limit else "закрыта"
 
     for i, (nick, level_id, username) in enumerate(zip(nicks, levels, tgs), start=1):
-        print(user)
 
         level_symbol = next(
             (level['level_symbol'] for level in kb.LEVEL_DESCR if level['level_id'] == level_id), '')
@@ -295,58 +294,38 @@ async def btn_signup_click(message: Message, state: FSMContext):
             signuped_users = await get_signup_people(event_name=event_name)
             current_signups = len(signuped_users["Полное имя"])
             event_info = await get_event_info_by_name(event_name=event_name)
-            if current_signups < event_info.limit:
-                await message.answer("Введите свой игровой ник\nПример : Фиалка",
-                                     reply_markup=await kb.get_user_cancel_button())
-                await state.set_state(EventSignUp.full_name)
-            else:
+            user_profile = await get_user_profile(chat_id=message.from_user.id)
+            if not user_profile:
+                await message.answer(
+                    "Заполните профиль, прежде чем записываться на мероприятие. Используйте кнопку '📝Редактировать профиль'",
+                    reply_markup=await kb.get_start_menu(rights="user")
+                )
+
+            elif current_signups >= event_info.limit:
                 await message.answer("К сожалению, достигнут лимит участников для этого мероприятия.")
+            else:
+                # получим данные пользователя
+                user_profile = await get_user_profile(chat_id=message.from_user.id)
+                print(user_profile.__dict__, '\n\n')
+                await state.update_data(full_name=user_profile.nickname,
+                                        id=message.from_user.id,
+                                        level=user_profile.level,
+                                        username=message.from_user.username)
+                level_symbol = kb.get_level_info_by_id(
+                    user_profile.level)['level_symbol']
+                await message.answer(f"Подтвердите запись на мероприятие!"
+                                     f"\n🎉Название мероприятия : {event_name}"
+                                     f"\n📒Ваши данные : "
+                                     f"\n👤Игровой ник : {user_profile.nickname}"
+                                     f"\n👤Уровень : {level_symbol}"
+                                     f"\n👤Ваш Telegram ник : @{message.from_user.username}",
+                                     reply_markup=await kb.get_confirm_menu("confirm_signup"))
+                await state.set_state(EventSignUp.confirm)
+
         else:
             await message.answer("Вы уже записались на это мерпориятие!")
     else:
         await message.answer("Запись на мероприятие уже закрыта!")
-
-
-@ user.message(EventSignUp.full_name)
-async def wait_full_name(message: Message, state: FSMContext):
-    if message.text is not None:
-        await state.update_data(full_name=message.text)
-        await message.answer(
-            'Выберите свой уровень. Описание уровней есть в <a href="https://t.me/mafia_itmo/64">посте</a>',
-            reply_markup=await kb.get_level_keyboard(),
-            parse_mode="HTML"
-        )
-        await state.set_state(EventSignUp.level)
-    else:
-        await message.answer("Некорректный ник! Попробуйте ещё раз!")
-
-
-@ user.callback_query(EventSignUp.level)
-async def level_selection_callback(callback: CallbackQuery, state: FSMContext):
-    # Получаем выбранный уровень
-    level_id = int(callback.data.split("_")[1])
-    selected_level = next(
-        (lvl for lvl in kb.LEVEL_DESCR if lvl["level_id"] == level_id), None)
-
-    if selected_level:
-        await state.update_data(level=selected_level)
-        await state.update_data(id=callback.from_user.id)
-        data_from_state: dict = await state.get_data()
-        event_name: str = data_from_state.get("event_name")
-        username = callback.from_user.username if callback.from_user.username else "No username"
-        await state.update_data(username=username)
-        full_name: str = data_from_state.get("full_name")
-        user_level_dict: dict = data_from_state.get("level")
-        await callback.message.answer(f"Подтвердите запись на мероприятие!"
-                                      f"\n🎉Название мероприятия : {event_name}"
-                                      f"\n📒Ваши данные : "
-                                      f"\n👤Игровой ник : {full_name}"
-                                      f"\n👤Уровень : {user_level_dict['level_symbol']}"
-                                      f"\n👤Ваш Telegram ник : @{username}",
-                                      reply_markup=await kb.get_confirm_menu("confirm_signup"))
-        await state.set_state(EventSignUp.confirm)
-    else:
-        await callback.message.answer("Ошибка выбора уровня. Попробуйте снова.")
 
 
 # Обработаем кнопку для подтверждения/отмены удаления мероприятия
@@ -360,15 +339,14 @@ async def confirm_signup_callback(callback: CallbackQuery, state: FSMContext):
         username: str = data_from_state.get("username")
 
         user_chat_id: str = data_from_state.get("id")
-        user_level: dict = data_from_state.get("level")  # Уровень
+        user_level = data_from_state.get("level")
 
-        # Сохраняем запись вместе с уровнем
         await add_signup_user(
             event_name=event_name,
             full_name=user_full_name,
             chat_id=user_chat_id,
             username=username,
-            level=user_level['level_id']  # Передаем уровень
+            level=user_level
         )
         await callback.message.answer("Вы успешно записались!", reply_markup=await kb.get_events_names_buttons())
         await state.clear()
@@ -379,7 +357,7 @@ async def confirm_signup_callback(callback: CallbackQuery, state: FSMContext):
 # Обработка заполнения профиля
 
 
-@user.message(F.text == "📝Редактировать профиль")
+@ user.message(F.text == "📝Редактировать профиль")
 async def edit_profile(message: Message, state: FSMContext):
     user_profile = await get_user_profile(chat_id=message.from_user.id)
     message_to_send = ""
@@ -393,14 +371,14 @@ async def edit_profile(message: Message, state: FSMContext):
     await state.set_state(ProfileEdit.nickname)
 
 
-@user.message(ProfileEdit.nickname)
+@ user.message(ProfileEdit.nickname)
 async def process_nickname(message: Message, state: FSMContext):
     await state.update_data(nickname=message.text)
     await message.answer("Вы из ИТМО?", reply_markup=kb.are_u_from_itmo_keyboard)
     await state.set_state(ProfileEdit.is_itmo)
 
 
-@user.message(ProfileEdit.is_itmo)
+@ user.message(ProfileEdit.is_itmo)
 async def process_is_itmo(message: Message, state: FSMContext):
     if message.text not in ["Да, я из ИТМО", "Нет, я не из ИТМО"]:
         await message.answer("Пожалуйста, выберите 'Да, я из ИТМО' или 'Нет, я не из ИТМО'.")
@@ -415,7 +393,7 @@ async def process_is_itmo(message: Message, state: FSMContext):
     await state.set_state(ProfileEdit.level)
 
 
-@user.callback_query(ProfileEdit.level)
+@ user.callback_query(ProfileEdit.level)
 async def process_level(callback: CallbackQuery, state: FSMContext):
     level_id = int(callback.data.split("_")[1])
     selected_level = next(
@@ -448,3 +426,47 @@ async def process_level(callback: CallbackQuery, state: FSMContext):
     else:
         await callback.message.answer("Ошибка выбора уровня. Попробуйте снова.")
         await callback.answer()
+
+
+# старый сценарий – заполнение ника на каждое мероприятие
+
+# @user.message(EventSignUp.full_name)
+# async def wait_full_name(message: Message, state: FSMContext):
+#     if message.text is not None:
+#         await state.update_data(full_name=message.text)
+#         await message.answer(
+#             'Выберите свой уровень. Описание уровней есть в <a href="https://t.me/mafia_itmo/64">посте</a>',
+#             reply_markup=await kb.get_level_keyboard(),
+#             parse_mode="HTML"
+#         )
+#         await state.set_state(EventSignUp.level)
+#     else:
+#         await message.answer("Некорректный ник! Попробуйте ещё раз!")
+
+
+# @ user.callback_query(EventSignUp.level)
+# async def level_selection_callback(callback: CallbackQuery, state: FSMContext):
+#     # Получаем выбранный уровень
+#     level_id = int(callback.data.split("_")[1])
+#     selected_level = next(
+#         (lvl for lvl in kb.LEVEL_DESCR if lvl["level_id"] == level_id), None)
+
+#     if selected_level:
+#         await state.update_data(level=selected_level)
+#         await state.update_data(id=callback.from_user.id)
+#         data_from_state: dict = await state.get_data()
+#         event_name: str = data_from_state.get("event_name")
+#         username = callback.from_user.username if callback.from_user.username else "No username"
+#         await state.update_data(username=username)
+#         full_name: str = data_from_state.get("full_name")
+#         user_level_dict: dict = data_from_state.get("level")
+#         await callback.message.answer(f"Подтвердите запись на мероприятие!"
+#                                       f"\n🎉Название мероприятия : {event_name}"
+#                                       f"\n📒Ваши данные : "
+#                                       f"\n👤Игровой ник : {full_name}"
+#                                       f"\n👤Уровень : {user_level_dict['level_symbol']}"
+#                                       f"\n👤Ваш Telegram ник : @{username}",
+#                                       reply_markup=await kb.get_confirm_menu("confirm_signup"))
+#         await state.set_state(EventSignUp.confirm)
+#     else:
+#         await callback.message.answer("Ошибка выбора уровня. Попробуйте снова.")
