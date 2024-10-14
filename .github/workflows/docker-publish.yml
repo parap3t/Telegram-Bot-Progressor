@@ -75,6 +75,8 @@ jobs:
     needs: build  # Ensure the deploy job runs after the build job completes
     if: github.event_name == 'workflow_dispatch'
     steps:
+      - name: Debug
+        uses: hmarr/debug-action@v3
       - name: Deploy Docker image to the VM
         uses: appleboy/ssh-action@v0.1.6
         with: 
