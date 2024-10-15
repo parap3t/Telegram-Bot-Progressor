@@ -25,8 +25,8 @@ LEVEL_DESCR = [
     },
     {
         "level_id": 5,
-        "level_symbol": "🔴",
-        "level_name": "Эксперт",
+        "level_symbol": "🟣",
+        "level_name": "Условно эксперт (выше 4)",
     }
 ]
 
