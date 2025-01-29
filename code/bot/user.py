@@ -54,11 +54,11 @@ async def btn_cancel_click(message: Message, state: FSMContext):
 
 @user.message(F.text == "👤Наши контакты")
 async def btn_contacts_click(message: Message):
-    await message.answer("Наши контакты:", reply_markup=kb.our_contacts)
+    await message.answer("Наши контакты:", reply_markup=kb.OUR_CONTACTS)
 
 @user.message(F.text == "💻Тех поддержка")
 async def btn_support_click(message: Message):
-    await message.answer("Техническая поддержка:", reply_markup=kb.tech_support)
+    await message.answer("Техническая поддержка:", reply_markup=kb.TECH_SUPPORT)
 
 @user.message(F.text == "🎉Мероприятия")
 async def btn_events_click(message: Message):

@@ -70,8 +70,8 @@ async def start_command(message: Message):
     await message.answer(f"Добро пожаловать, {message.from_user.first_name}!", reply_markup=await kb.get_start_menu(rights="admin"))
 
 @admin.message(AdminProtect(), F.text == "⚙️Админ панель")
-async def btn_admin_panel_click(message: Message):
-    await message.answer("Открываю админ.панель", reply_markup=kb.admin_panel)
+async def btn_ADMIN_PANEL_click(message: Message):
+    await message.answer("Открываю админ.панель", reply_markup=kb.ADMIN_PANEL)
 
 @admin.message(AdminProtect(), F.text == "🤖Назад")
 async def btn_back_to_start_menu_click(message: Message):
@@ -79,12 +79,12 @@ async def btn_back_to_start_menu_click(message: Message):
 
 @admin.message(AdminProtect(), F.text == "🚫Забанить пользователя")
 async def btn_ban_user_click(message: Message, state: FSMContext):
-    await message.answer("Отправьте айди пользователя...", reply_markup=kb.admin_cancel_markup)
+    await message.answer("Отправьте айди пользователя...", reply_markup=kb.ADMIN_CANCEL_MARKUP)
     await state.set_state(BanUser.id)
 
 @admin.message(F.text == "❌Отмена")
 async def btn_cancel_action_click(message: Message, state: FSMContext):
-    await message.answer("Отменяю действие", reply_markup=kb.admin_panel)
+    await message.answer("Отменяю действие", reply_markup=kb.ADMIN_PANEL)
     await state.clear()
 
 @admin.message(BanUser.id)
@@ -94,18 +94,18 @@ async def wait_id_to_ban_user(message: Message, state: FSMContext):
         await state.clear()
         chat_id = int(message.text)
         if await check_ban(chat_id=chat_id):
-            await message.answer("Пользователь уже находиться в бане!", reply_markup=kb.admin_panel)
+            await message.answer("Пользователь уже находиться в бане!", reply_markup=kb.ADMIN_PANEL)
         elif await check_admin(chat_id=chat_id):
-            await message.answer("Нельзя забанить администратора!", reply_markup=kb.admin_panel)
+            await message.answer("Нельзя забанить администратора!", reply_markup=kb.ADMIN_PANEL)
         else:
             await add_in_ban(chat_id=chat_id)
-            await message.answer("Пользователь забанен!", reply_markup=kb.admin_panel)
+            await message.answer("Пользователь забанен!", reply_markup=kb.ADMIN_PANEL)
     else:
         await message.answer("Некорректное айди пользователя!\nПопробуйте ещё раз!")
 
 @admin.message(AdminProtect(), F.text == "✅Разбанить пользователя")
 async def btn_unban_user_click(message: Message, state: FSMContext):
-    await message.answer("Отправьте айди пользователя...", reply_markup=kb.admin_cancel_markup)
+    await message.answer("Отправьте айди пользователя...", reply_markup=kb.ADMIN_CANCEL_MARKUP)
     await state.set_state(UnbanUser.id)
 
 @admin.message(UnbanUser.id)
@@ -115,15 +115,15 @@ async def wait_id_to_unban(message: Message, state: FSMContext):
         chat_id = int(message.text)
         if await check_ban(chat_id=chat_id):
             await del_from_ban(chat_id=chat_id)
-            await message.answer("Пользователь разбанен!", reply_markup=kb.admin_panel)
+            await message.answer("Пользователь разбанен!", reply_markup=kb.ADMIN_PANEL)
         else:
-            await message.answer("Пользователь никогда не был забанен!", reply_markup=kb.admin_panel)
+            await message.answer("Пользователь никогда не был забанен!", reply_markup=kb.ADMIN_PANEL)
     else:
         await message.answer("Некорректное айди пользователя!\nПопробуйте ещё раз!")
 
 @admin.message(AdminProtect(), F.text == "➕Добавить админа")
 async def btn_add_adm_click(message: Message, state: FSMContext):
-    await message.answer("Отправьте айди пользователя...", reply_markup=kb.admin_cancel_markup)
+    await message.answer("Отправьте айди пользователя...", reply_markup=kb.ADMIN_CANCEL_MARKUP)
     await state.set_state(AddAdmin.id)
 
 @admin.message(AddAdmin.id)
@@ -132,16 +132,16 @@ async def wait_id_to_add_admin(message: Message, state: FSMContext):
         await state.clear()
         chat_id = int(message.text)
         if await check_admin(chat_id=chat_id):
-            await message.answer("Пользователь уже является админом!", reply_markup=kb.admin_panel)
+            await message.answer("Пользователь уже является админом!", reply_markup=kb.ADMIN_PANEL)
         else:
             await add_in_admin(chat_id=chat_id)
-            await message.answer("Администратор добавлен!", reply_markup=kb.admin_panel)
+            await message.answer("Администратор добавлен!", reply_markup=kb.ADMIN_PANEL)
     else:
         await message.answer("Некорректное айди пользователя!\nПопробуйте ещё раз!")
 
 @admin.message(AdminProtect(), F.text == "➖Удалить админа")
 async def btn_del_adm_click(message: Message, state: FSMContext):
-   await message.answer("Отправьте айди пользователя...", reply_markup=kb.admin_cancel_markup)
+   await message.answer("Отправьте айди пользователя...", reply_markup=kb.ADMIN_CANCEL_MARKUP)
    await state.set_state(DelAdmin.id)
   
 @admin.message(DelAdmin.id)
@@ -151,16 +151,16 @@ async def wait_id_to_del_admin(message: Message, state: FSMContext):
         chat_id = int(message.text)
         if await check_admin(chat_id=chat_id):
             await del_from_admin(chat_id=chat_id)
-            await message.answer("Администратор удалён!", reply_markup=kb.admin_panel)
+            await message.answer("Администратор удалён!", reply_markup=kb.ADMIN_PANEL)
         else:
-            await message.answer("Такого администратора не существует!", reply_markup=kb.admin_panel)
+            await message.answer("Такого администратора не существует!", reply_markup=kb.ADMIN_PANEL)
     else:
         await message.answer("Некорректное айди пользователя!\nПопробуйте ещё раз!")
 
 @admin.message(AdminProtect(), F.text == "🗣️Сделать рассылку")
 async def btn_mailing_click(message: Message, state: FSMContext):
     await state.set_state(Mailing.message)
-    await message.answer("Отправьте сообщение для рассылки...", reply_markup=kb.admin_cancel_markup)
+    await message.answer("Отправьте сообщение для рассылки...", reply_markup=kb.ADMIN_CANCEL_MARKUP)
 
 @admin.message(Mailing.message)
 async def wait_mailing_message(message: Message, state: FSMContext):
@@ -170,7 +170,7 @@ async def wait_mailing_message(message: Message, state: FSMContext):
         await message.answer("Хотите добавить фоотграфию к рассылке?"
                              "\nЕсли да, то прикрепите её url-адресс."
                              "\nВ противном случае отправьте знак '-' следующим сообщением без кавычек",
-                             reply_markup=kb.admin_cancel_markup)
+                             reply_markup=kb.ADMIN_CANCEL_MARKUP)
         await state.set_state(Mailing.photo)
     else:
         await message.answer("Некорректное сообщение для рассылки!\nПопробуйте ещё раз!")
@@ -191,9 +191,9 @@ async def wait_mailing_photo(message: Message, state: FSMContext):
                                        reply_markup=await kb.get_confirm_menu(callback="confirm_mailing"))
             await state.set_state(Mailing.confirm)
         else:
-            await message.answer("Некорректный url адрес фотографии!\nПопробуйте ещё раз!", reply_markup=kb.admin_cancel_markup)
+            await message.answer("Некорректный url адрес фотографии!\nПопробуйте ещё раз!", reply_markup=kb.ADMIN_CANCEL_MARKUP)
     else:
-        await message.answer("Некорректное сообщение!\nПопробуйте ещё раз!", reply_markup=kb.admin_cancel_markup)
+        await message.answer("Некорректное сообщение!\nПопробуйте ещё раз!", reply_markup=kb.ADMIN_CANCEL_MARKUP)
 
 # Обработаем кнопку для подтверждения/отмены рассылки 
 @admin.callback_query(Mailing.confirm)
@@ -215,17 +215,17 @@ async def confirm_mailing_callback(callback: CallbackQuery, state: FSMContext):
             except:
                 # удаляем человека из рассылки, поскольку он заблокировал бота
                 await del_from_mailing(chat_id=user)
-        await callback.message.answer("Рассылка завершена!", reply_markup=kb.admin_panel)
+        await callback.message.answer("Рассылка завершена!", reply_markup=kb.ADMIN_PANEL)
         await state.clear()
    else:
         await callback.message.answer("Отменяю рассылку!\nВведите новое сообщение!",
-                                      reply_markup=kb.admin_cancel_markup)
+                                      reply_markup=kb.ADMIN_CANCEL_MARKUP)
         await state.set_state(Mailing.message)
 
 @admin.message(AdminProtect(), F.text == "🎇Создать мероприятие")
 async def btn_create_event_click(message: Message, state: FSMContext):
     await state.set_state(AddEvent.name)
-    await message.answer("Отправьте название!", reply_markup=kb.admin_cancel_markup)
+    await message.answer("Отправьте название!", reply_markup=kb.ADMIN_CANCEL_MARKUP)
 
 @admin.message(AddEvent.name)
 async def waiting_event_name(message: Message, state: FSMContext):
@@ -233,13 +233,13 @@ async def waiting_event_name(message: Message, state: FSMContext):
     if event_name is not None:
         if await check_event_by_name(event_name=event_name) is None:
             await state.update_data(name=event_name)
-            await message.answer("Введите дату и время мероприятия!\nПример: 12.02.2024 15:00", reply_markup=kb.admin_cancel_markup)
+            await message.answer("Введите дату и время мероприятия!\nПример: 12.02.2024 15:00", reply_markup=kb.ADMIN_CANCEL_MARKUP)
             await state.set_state(AddEvent.date)
         else:
-            await message.answer("Мероприятие с таким названием уже существует!", reply_markup=kb.admin_panel)
+            await message.answer("Мероприятие с таким названием уже существует!", reply_markup=kb.ADMIN_PANEL)
             await state.clear()
     else:
-        await message.answer("Некорректное название!\nПопробуйте ещё раз!", reply_markup=kb.admin_cancel_markup)
+        await message.answer("Некорректное название!\nПопробуйте ещё раз!", reply_markup=kb.ADMIN_CANCEL_MARKUP)
 
 @admin.message(AddEvent.date)
 async def waiting_date_of_event(message: Message, state: FSMContext):
@@ -258,12 +258,12 @@ async def waiting_date_of_event(message: Message, state: FSMContext):
         # Проверяем введённую дату на корректность    
         if (day <= last_days_in_month[month-1]):
             await state.update_data(date=date)
-            await message.answer("Введите описание мероприятия!", reply_markup=kb.admin_cancel_markup)
+            await message.answer("Введите описание мероприятия!", reply_markup=kb.ADMIN_CANCEL_MARKUP)
             await state.set_state(AddEvent.description)
         else:
-            await message.answer("Некорректная дата!", reply_markup=kb.admin_cancel_markup)
+            await message.answer("Некорректная дата!", reply_markup=kb.ADMIN_CANCEL_MARKUP)
     else:
-        await message.answer("Некорректная дата и время!\nПопробуйте ещё раз!", reply_markup=kb.admin_cancel_markup)
+        await message.answer("Некорректная дата и время!\nПопробуйте ещё раз!", reply_markup=kb.ADMIN_CANCEL_MARKUP)
 
 @admin.message(AddEvent.description)
 async def waiting_event_disc(message: Message, state: FSMContext):
@@ -280,7 +280,7 @@ async def waiting_event_disc(message: Message, state: FSMContext):
                              reply_markup=await kb.get_confirm_menu(callback="confirm_add_event"))
         await state.set_state(AddEvent.confirm)
     else:
-        await message.answer("Некорректное описание!\nПопробуйте ещё раз!", reply_markup=kb.admin_cancel_markup)
+        await message.answer("Некорректное описание!\nПопробуйте ещё раз!", reply_markup=kb.ADMIN_CANCEL_MARKUP)
 
 # Обработаем нажатие на кнопку для подтверждения/отмены создания мероприятия
 @admin.callback_query(AddEvent.confirm)
@@ -292,11 +292,11 @@ async def confirm_create_event_callback(callback: CallbackQuery, state: FSMConte
         event_date: str = data_from_state.get("date")
         event_description: str = data_from_state.get("description")
         await add_event_to_table(event_name=event_name, event_description=event_description, event_date=event_date)
-        await callback.message.answer("Мероприятие добавлено!", reply_markup=kb.admin_panel)
+        await callback.message.answer("Мероприятие добавлено!", reply_markup=kb.ADMIN_PANEL)
         await state.clear()
     else:
         await callback.message.answer("Отменяю создание!\nВведите название мероприятия!",
-                                      reply_markup=kb.admin_cancel_markup)
+                                      reply_markup=kb.ADMIN_CANCEL_MARKUP)
         await state.set_state(AddEvent.name)
 
 @admin.message(AdminProtect(), F.text == "🎆Удалить мероприятие")
@@ -305,10 +305,10 @@ async def btn_delete_event_click(message: Message, state: FSMContext):
         events_enumerate: str = ""
         for event in await get_events():
             events_enumerate += f"{event.id}. {event.name}\n"
-        await message.answer(f"Отправьте номер мероприятия!\n{events_enumerate}", reply_markup=kb.admin_cancel_markup)
+        await message.answer(f"Отправьте номер мероприятия!\n{events_enumerate}", reply_markup=kb.ADMIN_CANCEL_MARKUP)
         await state.set_state(DelEvent.id)
     else:
-        await message.answer("Нет мероприятий,которые можно удалить!", reply_markup=kb.admin_panel)
+        await message.answer("Нет мероприятий,которые можно удалить!", reply_markup=kb.ADMIN_PANEL)
         await state.clear()
 
 @admin.message(DelEvent.id)
@@ -322,10 +322,10 @@ async def waiting_id_of_event(message: Message, state: FSMContext):
                 reply_markup=await kb.get_confirm_menu(callback="confirm_del_event"))
             await state.set_state(DelEvent.confirm)
         else:
-            await message.answer("Мероприятия с таким номером не существует!", reply_markup=kb.admin_panel)
+            await message.answer("Мероприятия с таким номером не существует!", reply_markup=kb.ADMIN_PANEL)
             await state.clear()
     else:
-        await message.answer("Некорректный номер!\nПопробуйте ещё раз!", reply_markup=kb.admin_cancel_markup)
+        await message.answer("Некорректный номер!\nПопробуйте ещё раз!", reply_markup=kb.ADMIN_CANCEL_MARKUP)
 
 @admin.callback_query(DelEvent.confirm)
 async def confirm_del_event_callback(callback: CallbackQuery, state: FSMContext):
@@ -334,11 +334,11 @@ async def confirm_del_event_callback(callback: CallbackQuery, state: FSMContext)
         data_from_state: dict = await state.get_data()
         event_id: str = data_from_state.get("id")
         await delete_event_from_table(event_id=int(event_id))
-        await callback.message.answer("Мероприятие удалено!", reply_markup=kb.admin_panel)
+        await callback.message.answer("Мероприятие удалено!", reply_markup=kb.ADMIN_PANEL)
         await state.clear()
     else:
         await callback.message.answer("Отменяю удаление!\nВведите другой порядковый номер!",
-                                      reply_markup=kb.admin_cancel_markup)
+                                      reply_markup=kb.ADMIN_CANCEL_MARKUP)
         await state.set_state(DelEvent.id)
 
 @admin.message(AdminProtect(), F.text == "👈Назад")
