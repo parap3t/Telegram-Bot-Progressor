@@ -2,6 +2,7 @@ import os
 
 import bot.keyboards as kb
 import pandas as pd
+import bot.config as cfg
 
 from aiogram import Router, F, Bot
 from aiogram.types import Message, CallbackQuery, FSInputFile
@@ -9,19 +10,16 @@ from aiogram.filters import CommandStart, Filter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from database.requests import (check_ban, check_event_by_name, get_users_from_mailing, check_admin, add_in_ban,
-                               del_from_ban, add_in_admin, del_from_admin, add_event_to_table, get_events,
-                               check_event_by_id, get_event_name_by_id, delete_event_from_table, get_count_of_signup, 
+                               del_from_ban, add_in_admin, del_from_admin, add_event, get_events,
+                               check_event_by_id, get_event_name_by_id, delete_event, get_signup_count, 
                                del_from_mailing, get_event_info_by_name, get_signup_people,
-                               check_is_signup_open, close_signup_to_event, get_count_of_events)
+                               check_is_signup_open, close_event_signup, get_events_count)
 from re import search, compile
-from bot.config import BOT_API
 
 
 # Чтобы не писать dispatcher 2-й раз заменим его на роутер
 admin = Router()
 
-# Создаём переменную с ботом, чтобы в дальнейшем можно было отправить рассылку
-BOT = Bot(token=BOT_API)
 
 # Создаём класс (фильтр) для проверки админа
 class AdminProtect(Filter):
@@ -209,9 +207,9 @@ async def confirm_mailing_callback(callback: CallbackQuery, state: FSMContext):
         for user in users:
             try:
                 if photo_from_admin is None:
-                    await BOT.send_message(chat_id=user.chat_id, text=message_from_admin)
+                    await cfg.BOT.send_message(chat_id=user.chat_id, text=message_from_admin)
                 else:
-                    await BOT.send_photo(chat_id=user.chat_id, photo=photo_from_admin, caption=message_from_admin)
+                    await cfg.BOT.send_photo(chat_id=user.chat_id, photo=photo_from_admin, caption=message_from_admin)
             except:
                 # удаляем человека из рассылки, поскольку он заблокировал бота
                 await del_from_mailing(chat_id=user)
@@ -291,7 +289,7 @@ async def confirm_create_event_callback(callback: CallbackQuery, state: FSMConte
         event_name: str = data_from_state.get("name")
         event_date: str = data_from_state.get("date")
         event_description: str = data_from_state.get("description")
-        await add_event_to_table(event_name=event_name, event_description=event_description, event_date=event_date)
+        await add_event(event_name=event_name, event_description=event_description, event_date=event_date)
         await callback.message.answer("Мероприятие добавлено!", reply_markup=kb.ADMIN_PANEL)
         await state.clear()
     else:
@@ -301,7 +299,7 @@ async def confirm_create_event_callback(callback: CallbackQuery, state: FSMConte
 
 @admin.message(AdminProtect(), F.text == "🎆Удалить мероприятие")
 async def btn_delete_event_click(message: Message, state: FSMContext):
-    if await get_count_of_events() > 0:
+    if await get_events_count() > 0:
         events_enumerate: str = ""
         for event in await get_events():
             events_enumerate += f"{event.id}. {event.name}\n"
@@ -333,7 +331,7 @@ async def confirm_del_event_callback(callback: CallbackQuery, state: FSMContext)
     if callback.data == "confirm_del_event":
         data_from_state: dict = await state.get_data()
         event_id: str = data_from_state.get("id")
-        await delete_event_from_table(event_id=int(event_id))
+        await delete_event(event_id=int(event_id))
         await callback.message.answer("Мероприятие удалено!", reply_markup=kb.ADMIN_PANEL)
         await state.clear()
     else:
@@ -376,7 +374,7 @@ async def confirm_close_event_callback(callback: CallbackQuery, state: FSMContex
     if callback.data == "confirm_close_event":
         data_from_state: dict = await state.get_data()
         event_name: str = data_from_state.get("event_name")
-        await close_signup_to_event(event_name=event_name)
+        await close_event_signup(event_name=event_name)
         await callback.message.answer("Запись закрыта!", reply_markup=await kb.get_event_menu(rights="admin"))
     else:
         await callback.message.answer("Отменяю закрытие!", reply_markup=await kb.get_event_menu(rights="admin"))
@@ -385,7 +383,7 @@ async def confirm_close_event_callback(callback: CallbackQuery, state: FSMContex
 async def btn_signup_click(message: Message, state: FSMContext):
     data_from_state: dict = await state.get_data()
     event_name: str = data_from_state.get("event_name")
-    if await get_count_of_signup(event_name=event_name) == 0:
+    if await get_signup_count(event_name=event_name) == 0:
         await message.answer("На мероприятие никто не записался!")
     else:
         # Приводим данные в объект класса DataFrame 

@@ -1,25 +1,29 @@
-# Импортируем недостающие модули
-from aiogram import Bot,Dispatcher
+import bot.config as cfg
+
+from aiogram import Dispatcher
 from bot.user import user
 from bot.admin import admin
 from asyncio import run
 from database.models import async_main
 
-# Запуск бота
+
 async def main() -> None:
+    
     await async_main()
-    bot = Bot(token="token") # Взаимодействие с ботом
+    
     dp = Dispatcher() # Получение обновлений бота
     dp.include_routers(admin,user)
-    await dp.start_polling(bot)
+    
+    await dp.start_polling(cfg.BOT)
 
-# Запуск программы
-if __name__ == "__main__": # Создаём точку входа
+
+if __name__ == "__main__": 
+    
     try:
-        # Уведомляем о запуске бота
+        
         print("Бот включён!")
         run(main())
-        # Обработаем выключение бота
+
     except KeyboardInterrupt:
         print("Бот выключен!")
         

@@ -1,158 +1,247 @@
-from database.models import Admin, BannedUser, UserInMailing, Event, EventSingUp
+import bot.config as cfg
+
+from database.models import Admin, BannedUser, MailingUser, Event, EventSingUp
 from database.models import async_session
-from bot.config import ADMIN_CHAT_ID
 from sqlalchemy import select, delete, update, func
+
+
+SIGNUP_PERSON = 1
+CANCELED_SIGNUP = 0
+
 
 async def get_events():
     async with async_session() as session:
         return await session.scalars(select(Event))
 
-async def add_in_mailing(*, chat_id: int):
+
+async def add_in_mailing(*, CHAT_ID: int):
     async with async_session() as session:
+        
         # Проверяем находиться-ли пользователь в рассылке
-        user = await session.scalar(select(UserInMailing).where(UserInMailing.chat_id == chat_id))
+        USER = await session.scalar(select(MailingUser).where(MailingUser.chat_id == CHAT_ID))
+        
         # Если пользователя нет в таблице, то добавляем его
-        if not user:
-            session.add(UserInMailing(chat_id=chat_id))
+        if not USER:
+            
+            session.add(MailingUser(chat_id=CHAT_ID))
+            
             await session.commit()
 
-async def check_is_signup_open(*, event_name: str):
+
+async def check_is_signup_open(*, EVENT_NAME: str):
     async with async_session() as session:
-        return await session.scalar(select(Event).where((Event.is_signup_open == 1) &
-                                                        (Event.name == event_name)))
         
-async def close_signup_to_event(*, event_name: str):
+        OPEN_SIGNUP = 1
+        
+        return await session.scalar(select(Event).where(
+                                                        (Event.is_signup_open == OPEN_SIGNUP) &
+                                                        (Event.name == EVENT_NAME)
+                                                        ))
+        
+
+async def close_event_signup(*, NAME: str):
     async with async_session() as session:
-        await session.execute(update(Event).where(Event.name == event_name).
-                                                  values(is_signup_open = 0))
+        
+        CLOSE_SIGNUP = 0
+        
+        await session.execute(update(Event).where(Event.name == NAME).
+                                                  values(is_signup_open = CLOSE_SIGNUP))
+        
         await session.commit()
 
-async def del_from_mailing(*, chat_id: int):
+
+async def del_from_mailing(*, CHAT_ID: int):
     async with async_session() as session:
-        await session.execute(delete(UserInMailing).where(UserInMailing.chat_id == chat_id))
+        await session.execute(delete(MailingUser).where(MailingUser.chat_id == CHAT_ID))
         await session.commit()
 
-async def add_in_ban(*, chat_id: int):
+
+async def add_in_ban(*, CHAT_ID: int):
     async with async_session() as session:
-        session.add(BannedUser(chat_id=chat_id))
+        
+        session.add(BannedUser(chat_id=CHAT_ID))
+        
         await session.commit()
 
-async def del_from_ban(*, chat_id: int):
+
+async def del_from_ban(*, CHAT_ID: int):
     async with async_session() as session:
-        await session.execute(delete(BannedUser).where(BannedUser.chat_id == chat_id))
+        await session.execute(delete(BannedUser).where(BannedUser.chat_id == CHAT_ID))
         await session.commit()
 
-async def add_in_admin(*, chat_id: int):
+
+async def add_in_admin(*, CHAT_ID: int):
     async with async_session() as session:
-        session.add(Admin(chat_id=chat_id))
+        
+        session.add(Admin(chat_id=CHAT_ID))
+        
         await session.commit()
 
-async def del_from_admin(*, chat_id: int):
+
+async def del_from_admin(*, CHAT_ID: int):
     async with async_session() as session:
-        await session.execute(delete(Admin).where(Admin.chat_id == chat_id))
+        await session.execute(delete(Admin).where(Admin.chat_id == CHAT_ID))
         await session.commit()
+
 
 async def get_users_from_mailing():
     async with async_session() as session:
-        return await session.scalars(select(UserInMailing))
+        return await session.scalars(select(MailingUser))
 
-async def check_ban(*, chat_id: int):
+
+async def check_ban(*, CHAT_ID: int):
     async with async_session() as session:
-        return await session.scalar(select(BannedUser).where(BannedUser.chat_id == chat_id))
+        return await session.scalar(select(BannedUser).where(BannedUser.chat_id == CHAT_ID))
+
 
 async def check_admin(*, chat_id: int):
     async with async_session() as session:
-        if str(chat_id) == ADMIN_CHAT_ID: 
+        
+        if str(chat_id) == cfg.ADMIN_CHAT_ID: 
             return True
+        
         else:
             return await session.scalar(select(Admin).where(Admin.chat_id == chat_id))
 
-async def add_event_to_table(*, event_name: str, event_description: str, 
-                             event_date: str, is_signup_open: int=1):
+
+async def add_event(*, NAME: str, DESCRIPTION: str, 
+                       DATE: str, is_signup_open: int=1):
+    
     async with async_session() as session:
-        session.add(Event(name=event_name, description=event_description, 
-                          date=event_date, is_signup_open=is_signup_open))
+        
+        session.add(Event(name=NAME, description=DESCRIPTION, 
+                          date=DATE, is_signup_open=is_signup_open))
+        
         await session.commit()
     
-async def delete_event_from_table(*, event_id: int):
+    
+async def delete_event(*, ID: int):
     async with async_session() as session:
-        await session.execute(delete(Event).where(Event.id == event_id))
+        
+        await session.execute(delete(Event).where(Event.id == ID))
         await session.commit()
-        await session.execute((delete(EventSingUp).where(EventSingUp.event_id == event_id)))
-        await session.commit()
-
-async def check_event_by_name(*, event_name: str):
-    async with async_session() as session:
-        return await session.scalar(select(Event).where(Event.name == event_name))
-
-async def check_event_by_id(*, event_id: int):
-    async with async_session() as session:
-        return await session.scalar(select(Event).where(Event.id == event_id))
-
-async def get_event_name_by_id(*, event_id: int):
-    async with async_session() as session:
-        return await session.scalar(select(Event).where(Event.id == event_id))
-
-async def get_event_info_by_name(*, event_name: str):
-    async with async_session() as session:
-        return await session.scalar(select(Event).where(Event.name == event_name))
-
-async def add_signup_user(*, event_name: str, full_name: str, phone: str, chat_id: int):
-    async with async_session() as session:
-        id_of_event = (await session.scalar(select(Event).where(Event.name == event_name))).id
-        session.add(EventSingUp(chat_id=chat_id, full_name=full_name, 
-                                phone=phone, event_id=id_of_event, event_status=1))
+        
+        await session.execute((delete(EventSingUp).where(EventSingUp.event_id == ID)))
         await session.commit()
 
-async def check_signup(*, event_name: str, chat_id: int):
-    async with async_session() as session:
-        id_of_event = (await session.scalar(select(Event).where(Event.name == event_name))).id
-        return await session.scalar(select(EventSingUp).where((EventSingUp.event_id == id_of_event) &
-                                                              (EventSingUp.chat_id == chat_id)))
 
-async def check_go_to_event(*, event_name: str, chat_id: int):
+async def check_event_by_name(*, NAME: str):
     async with async_session() as session:
-        id_of_event = (await session.scalar(select(Event).where(Event.name == event_name))).id
-        return await session.scalar(select(EventSingUp).where((EventSingUp.event_status == 1) &
-                                                               (EventSingUp.event_id == id_of_event) &
-                                                               (EventSingUp.chat_id == chat_id)))
+        return await session.scalar(select(Event).where(Event.name == NAME))
 
-async def get_full_info_about_singup_user(*, event_name: str, chat_id: int):
-    async with async_session() as session:
-        id_of_event = (await session.scalar(select(Event).where(Event.name == event_name))).id
-        return await session.scalar(select(EventSingUp).where((EventSingUp.event_id == id_of_event) &
-                                                              (EventSingUp.chat_id == chat_id)))
 
-async def change_signup_status(*, event_name: str, chat_id: int):
+async def check_event_by_id(*, ID: int):
     async with async_session() as session:
-        id_of_event = (await session.scalar(select(Event).where(Event.name == event_name))).id
-        await session.execute(update(EventSingUp).where((EventSingUp.event_id == id_of_event) &
-                                                        (EventSingUp.chat_id == chat_id)).
-                                                        values(event_status = 0))
+        return await session.scalar(select(Event).where(Event.id == ID))
+
+
+async def get_event_name_by_id(*, ID: int):
+    async with async_session() as session:
+        return await session.scalar(select(Event).where(Event.id == ID))
+
+
+async def get_event_info_by_name(*, NAME: str):
+    async with async_session() as session:
+        return await session.scalar(select(Event).where(Event.name == NAME))
+
+
+async def add_signup_user(*, EVENT_NAME: str, USER_FULL_NAME: str, PHONE: str, CHAT_ID: int):
+    async with async_session() as session:
+           
+        EVENT_ID = (await session.scalar(select(Event).where(Event.name == EVENT_NAME))).id
+        
+        session.add(EventSingUp(chat_id=CHAT_ID, 
+                                full_name=USER_FULL_NAME, 
+                                phone=PHONE, 
+                                event_id=EVENT_ID, 
+                                event_status=SIGNUP_PERSON))
+        
         await session.commit()
 
-async def get_count_of_signup(*, event_name: str):
-    async with async_session() as session:
-        id_of_event = (await session.scalar(select(Event).where(Event.name == event_name))).id
-        return await session.scalar(select(func.count(EventSingUp.id)).filter((EventSingUp.event_status == 1) &
-                                                                              (EventSingUp.event_id == id_of_event)))
 
-async def get_count_of_events():
+async def check_signup(*, EVENT_NAME: str, CHAT_ID: int):
+    async with async_session() as session:
+        
+        EVENT_ID = (await session.scalar(select(Event).where(Event.name == EVENT_NAME))).id
+        
+        return await session.scalar(select(EventSingUp).where(
+                                                              (EventSingUp.event_id == EVENT_ID) &
+                                                              (EventSingUp.chat_id == CHAT_ID)
+                                                              ))
+
+
+async def check_go_to_event(*, EVENT_NAME: str, CHAT_ID: int):
+    async with async_session() as session:
+        
+        EVENT_ID = (await session.scalar(select(Event).where(Event.name == EVENT_NAME))).id
+        
+        return await session.scalar(select(EventSingUp).where(
+                                                               (EventSingUp.event_status == SIGNUP_PERSON) &
+                                                               (EventSingUp.event_id == EVENT_ID) &
+                                                               (EventSingUp.chat_id == CHAT_ID)
+                                                              ))
+
+
+async def get_signup_user_full_info(*, EVENT_NAME: str, CHAT_ID: int):
+    async with async_session() as session:
+        
+        EVENT_ID = (await session.scalar(select(Event).where(Event.name == EVENT_NAME))).id
+        
+        return await session.scalar(select(EventSingUp).where(
+                                                              (EventSingUp.event_id == EVENT_ID) &
+                                                              (EventSingUp.chat_id == CHAT_ID)
+                                                              ))
+
+
+async def change_signup_status(*, EVENT_NAME: str, CHAT_ID: int):
+    async with async_session() as session:
+        
+        EVENT_ID = (await session.scalar(select(Event).where(Event.name == EVENT_NAME))).id
+        
+        await session.execute(update(EventSingUp).where(
+                                                        (EventSingUp.event_id == EVENT_ID) &
+                                                        (EventSingUp.chat_id == CHAT_ID)).
+                                                        values(event_status = CANCELED_SIGNUP))
+        
+        await session.commit()
+
+
+async def get_signup_count(*, EVENT_NAME: str):
+    async with async_session() as session:
+        
+        EVENT_ID = (await session.scalar(select(Event).where(Event.name == EVENT_NAME))).id
+        
+        return await session.scalar(select(func.count(EventSingUp.id)).filter(
+                                                                              (EventSingUp.event_status == SIGNUP_PERSON) &
+                                                                              (EventSingUp.event_id == EVENT_ID)
+                                                                              ))
+
+
+async def get_events_count():
     async with async_session() as session:
         return await session.scalar(select(func.count(Event.id)))
 
-async def get_signup_people(*, event_name: str):
+
+async def get_signup_people(*, EVENT_NAME: str):
     async with async_session() as session:
-        id_of_event = (await session.scalar(select(Event).where(Event.name == event_name))).id
+        
+        EVENT_ID = (await session.scalar(select(Event).where(Event.name == EVENT_NAME))).id
+        
         people: dict = {
             "Полное имя": [],
             "Телефон": [],
             "Айди чата": []
         }
-        signup_people = await session.scalars(select(EventSingUp).where((EventSingUp.event_status == 1) & 
-                                                                        (EventSingUp.event_id == id_of_event)))
+        
+        signup_people = await session.scalars(select(EventSingUp).where(
+                                                                        (EventSingUp.event_status == SIGNUP_PERSON) & 
+                                                                        (EventSingUp.event_id == EVENT_ID)
+                                                                        ))
+        
         for user in signup_people:
+            
             people["Полное имя"] += [user.full_name]
             people["Телефон"] += [user.phone]
             people["Айди чата"] += [user.chat_id]
+            
         return people

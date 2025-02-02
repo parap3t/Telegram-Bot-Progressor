@@ -6,8 +6,8 @@ from aiogram.filters import Command, CommandStart, Filter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from database.requests import (check_ban, check_event_by_name, add_in_mailing, get_event_info_by_name, check_signup,
-                               check_go_to_event, get_full_info_about_singup_user, change_signup_status, add_signup_user,
-                               get_count_of_events, check_is_signup_open)
+                               check_go_to_event, get_signup_user_full_info, change_signup_status, add_signup_user,
+                               get_events_count, check_is_signup_open)
 from re import compile, search
 
 # Чтобы не писать dispatcher 2-й раз заменим его на роутер
@@ -63,7 +63,7 @@ async def btn_support_click(message: Message):
 @user.message(F.text == "🎉Мероприятия")
 async def btn_events_click(message: Message):
     # Проверяем количество существующих мероприятий
-    if await get_count_of_events() == 0:
+    if await get_events_count() == 0:
         await message.answer("Нет мероприятий на которые можно записаться!")
     else:
         await message.answer("Выберите интересующее вас мероприятие!",
@@ -94,7 +94,7 @@ async def btn_event_name_click(message: Message, state: FSMContext):
                              reply_markup=await kb.get_event_menu(rights="user", 
                                                                   event_status=f"{"unsigned" if is_signup_open is not None else ""}"))
     else:
-        full_info_about_signup_user = await get_full_info_about_singup_user(event_name=event_name, 
+        full_info_about_signup_user = await get_signup_user_full_info(event_name=event_name, 
                                                                                 chat_id=chat_id)
         signup_user_full_name = full_info_about_signup_user.full_name
         signup_user_phone = full_info_about_signup_user.phone
