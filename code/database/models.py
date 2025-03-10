@@ -39,7 +39,7 @@ class Event(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     name: Mapped[str] = mapped_column(String(60))
-    date: Mapped[str] = mapped_column(String(14))
+    date_and_time: Mapped[str] = mapped_column(String(14))
     description: Mapped[str] = mapped_column(String(150))
     is_signup_open: Mapped[int] = mapped_column(Integer)
 

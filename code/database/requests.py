@@ -84,7 +84,7 @@ async def del_from_admin(*, CHAT_ID: int):
         await session.commit()
 
 
-async def get_users_from_mailing():
+async def get_mailing_users():
     async with async_session() as session:
         return await session.scalars(select(MailingUser))
 
@@ -105,12 +105,12 @@ async def check_admin(*, chat_id: int):
 
 
 async def add_event(*, NAME: str, DESCRIPTION: str, 
-                       DATE: str, is_signup_open: int=1):
+                       DATE_AND_TIME: str, is_signup_open: int=1):
     
     async with async_session() as session:
         
         session.add(Event(name=NAME, description=DESCRIPTION, 
-                          date=DATE, is_signup_open=is_signup_open))
+                          date_and_time=DATE_AND_TIME, is_signup_open=is_signup_open))
         
         await session.commit()
     
@@ -145,13 +145,13 @@ async def get_event_info_by_name(*, NAME: str):
         return await session.scalar(select(Event).where(Event.name == NAME))
 
 
-async def add_signup_user(*, EVENT_NAME: str, USER_FULL_NAME: str, PHONE: str, CHAT_ID: int):
+async def add_signup_user(*, EVENT_NAME: str, FULL_NAME: str, PHONE: str, CHAT_ID: int):
     async with async_session() as session:
            
         EVENT_ID = (await session.scalar(select(Event).where(Event.name == EVENT_NAME))).id
         
         session.add(EventSingUp(chat_id=CHAT_ID, 
-                                full_name=USER_FULL_NAME, 
+                                full_name=FULL_NAME, 
                                 phone=PHONE, 
                                 event_id=EVENT_ID, 
                                 event_status=SIGNUP_PERSON))

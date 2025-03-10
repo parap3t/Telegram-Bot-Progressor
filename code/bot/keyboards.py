@@ -52,11 +52,11 @@ async def get_event_menu(*, RIGHTS: str, EVENT_STATUS: str = ""):
     return keyboard.adjust(1).as_markup(resize_keyboard=True, input_field_placeholder="Выберите пункт меню...")
 
 
-async def get_user_cancel_button(*, ADDITION: str = ""):
+async def get_user_cancel_button(addition: str = ""):
     
     keyboard = ReplyKeyboardBuilder()
     
-    if ADDITION == "phone":
+    if addition == "phone":
         keyboard.add(KeyboardButton(text="📞Отправить", request_contact=True))
     
     keyboard.add(KeyboardButton(text="🚫Отмена"))
@@ -80,7 +80,7 @@ async def get_start_menu(*, RIGHTS: str):
     return keyboard.adjust(1).as_markup(resize_keyboard=True, input_field_placeholder="Выберите пункт меню...")
 
 
-async def get_confirm_menu(CALLBACK: str):
+async def get_confirm_menu(*, CALLBACK: str):
     
     keyboard = InlineKeyboardMarkup(inline_keyboard=[
                                     [InlineKeyboardButton(text="✅Подтвердить", callback_data=f"{CALLBACK}")],
