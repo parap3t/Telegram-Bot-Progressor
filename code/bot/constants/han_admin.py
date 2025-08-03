@@ -1,0 +1,9 @@
+NO_PHOTO_URL = "-"
+DATE_AND_TIME_FORMAT = "%d.%m.%Y %H:%M"
+NOT_ARRIVED = False
+ARRIVED = True
+GOOGLE_FORM_REGEXP = "^https:\/\/(docs|forms)\.google\.com\/(forms|spreadsheets)\/d\/[a-zA-Z0-9_-]+\/.*"
+USER_IS_ADMIN = True
+USER_NOT_ADMIN = False
+USER_IS_BANNED = True
+USER_NOT_BANNED = False
