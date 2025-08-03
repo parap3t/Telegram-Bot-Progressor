@@ -22,9 +22,7 @@ async def main() -> None:
     """
     await async_main()  # Инициализация подключения к базе данных
 
-    await set_admin_status(chat_id=930879376, admin_status=True)
-
-    #await add_root_admin()  # Добавление корневого администратора
+    await add_root_admin()  # Добавление корневого администратора
 
     cfg.dp.include_routers(admin, user)  # Подключение роутеров
 
