@@ -4,7 +4,7 @@ from asyncio import run, create_task
 from bot.handlers.user import user
 from bot.handlers.admin import admin
 from database.models import async_main
-from database.requests import add_root_admin, set_admin_status
+from database.requests import add_root_admin
 from bot.services.recommender import schedule_weekly_recommendations
 from bot.configs.logger_config import logger
 
